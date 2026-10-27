@@ -96,6 +96,11 @@ async function startServer() {
   app.get("/me", auth.me);
 
   // ==============================
+  // COMPLETE CUSTOMER PROFILE
+  // ==============================
+  app.post("/complete-profile", auth.completeProfile);
+
+  // ==============================
   // LOGOUT
   // ==============================
   app.post("/logout", auth.logout);

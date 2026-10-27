@@ -1,308 +1,187 @@
-<?php 
+
+<?php
 session_start();
 
 $pageClass = "product-page";
 
-include('./admin/includes/header.php');
-include('./admin/includes/topbar.php');
-include_once("../app/config/config.php");
+// Load database configuration before page includes.
+require_once __DIR__ . "/../app/config/config.php";
 
+// Find product using UUID first, or ID as a fallback.
+$product = null;
 
-if(isset($_GET['uuid'])) {
+if (isset($_GET['uuid']) && trim($_GET['uuid']) !== '') {
+    $uuid = trim($_GET['uuid']);
 
-    $uuid = mysqli_real_escape_string($conn, $_GET['uuid']);
+    $stmt = mysqli_prepare(
+        $conn,
+        "SELECT id, uuid, productName, productDescription, price, img
+         FROM product_item
+         WHERE uuid = ?
+         LIMIT 1"
+    );
 
-
-    $query = "SELECT 
-                    id,
-                    uuid,
-                    productName,
-                    productDescription,
-                    price,
-                    img
-              FROM product_item 
-              WHERE uuid = '$uuid'
-              LIMIT 1";
-
-    $result = mysqli_query($conn, $query);
-
-    if(!$result) {
-
-        echo "Database error: " . mysqli_error($conn);
-        exit();
+    if (!$stmt) {
+        http_response_code(500);
+        exit("Unable to prepare the product query.");
     }
 
-    $product = mysqli_fetch_assoc($result);
+    mysqli_stmt_bind_param($stmt, "s", $uuid);
 
-    // PRODUCT NOT FOUND
-    if(!$product){
+} elseif (isset($_GET['id']) && filter_var($_GET['id'], FILTER_VALIDATE_INT, [
+    'options' => ['min_range' => 1]
+])) {
+    $id = (int) $_GET['id'];
 
-        echo "Product not found";
-        exit();
+    $stmt = mysqli_prepare(
+        $conn,
+        "SELECT id, uuid, productName, productDescription, price, img
+         FROM product_item
+         WHERE id = ?
+         LIMIT 1"
+    );
+
+    if (!$stmt) {
+        http_response_code(500);
+        exit("Unable to prepare the product query.");
     }
 
-} 
+    mysqli_stmt_bind_param($stmt, "i", $id);
 
-
-elseif(isset($_GET['id'])) {
-
-    $id = mysqli_real_escape_string($conn, $_GET['id']);
-
-    $query = "SELECT 
-                    id,
-                    uuid,
-                    productName,
-                    productDescription,
-                    price,
-                    img
-              FROM product_item 
-              WHERE id = '$id'
-              LIMIT 1";
-
-    $result = mysqli_query($conn, $query);
-
-    if(!$result) {
-
-        echo "Database error: " . mysqli_error($conn);
-        exit();
-    }
-
-    $product = mysqli_fetch_assoc($result);
-
-    if(!$product){
-
-        echo "Product not found";
-        exit();
-    }
-
-} 
-
-else {
-
-    echo "No Product Selected";
-    exit();
+} else {
+    http_response_code(400);
+    exit("Invalid product selection.");
 }
+
+if (!mysqli_stmt_execute($stmt)) {
+    http_response_code(500);
+    exit("Unable to load this product.");
+}
+
+$result = mysqli_stmt_get_result($stmt);
+$product = mysqli_fetch_assoc($result);
+mysqli_stmt_close($stmt);
+
+if (!$product) {
+    http_response_code(404);
+    exit("Product not found.");
+}
+
+include __DIR__ . "/admin/includes/header.php";
+include __DIR__ . "/admin/includes/topbar.php";
 ?>
 
-<div class="product-container">
-
-
-    <div class="left">
-
-        <div class="image-wrapper">
-
-            <img src="assets/product_img/<?php echo htmlspecialchars($product['img']); ?>"
-                 alt="<?php echo htmlspecialchars($product['productName']); ?>">
-
-        </div>
-
-    </div>
-
-
-
-
-
-    
-    <div class="right">
-
-        <div class="brand">
-
-            Premium Collection
-
-        </div>
-
-
-
-
-
-        <div class="title">
-
-            <?php echo htmlspecialchars($product['productName']); ?>
-
-        </div>
-
-
-
-
-        <div class="price-section">
-
-            <span class="price">
-
-                ₱<?php echo number_format($product['price'], 2); ?>
-
-            </span>
-
-        </div>
-
-
-
-
-
-        <div class="desc">
-
-            <?php echo nl2br(htmlspecialchars($product['productDescription'])); ?>
-
-        </div>
-
-
-
-
-
-        
-        <div class="label">
-
-            Quantity:
-
-        </div>
-
-
-
-
-
-       
-        <form method="POST"
-              action="/E-commerce/app/controllers/cartController.php"
-              id="cartForm">
-
-      
-            <input type="hidden"
-                   name="product_uuid"
-                   value="<?php echo htmlspecialchars($product['uuid']); ?>">
-
-
-            <input type="hidden"
-                   name="selected_size"
-                   id="selected_size"
-                   value="L">
-
-
-            <input type="hidden"
-                   name="selected_color"
-                   id="selected_color"
-                   value="Orange">
-
-
-
-
-            <div class="quantity-box">
-
-                <button type="button"
-                        onclick="decrementQuantity()">
-
-                    -
-
-                </button>
-
-                <input type="number"
-                       name="quantity"
-                       id="quantity_input"
-                       value="1"
-                       min="1">
-
-                <button type="button"
-                        onclick="incrementQuantity()">
-
-                    +
-
-                </button>
-
+<main class="product-page">
+    <div class="product-container">
+
+        <section class="product-image-panel">
+            <div class="image-wrapper">
+                <img
+                    src="assets/product_img/<?php echo rawurlencode(basename($product['img'] ?? '')); ?>"
+                    alt="<?php echo htmlspecialchars($product['productName'], ENT_QUOTES, 'UTF-8'); ?>"
+                >
+            </div>
+        </section>
+
+        <section class="product-details">
+
+            <div class="brand">Premium Collection</div>
+
+            <h1 class="product-title">
+                <?php echo htmlspecialchars($product['productName'], ENT_QUOTES, 'UTF-8'); ?>
+            </h1>
+
+            <div class="price-section">
+                <span class="price">
+                    ₱<?php echo number_format((float) $product['price'], 2); ?>
+                </span>
             </div>
 
+            <p class="product-description"><?php
+                echo nl2br(htmlspecialchars(
+                    $product['productDescription'] ?? '',
+                    ENT_QUOTES,
+                    'UTF-8'
+                ));
+            ?></p>
 
+            <form
+                method="POST"
+                action="../app/controllers/cartController.php"
+                id="cartForm"
+            >
+                <input
+                    type="hidden"
+                    name="product_uuid"
+                    value="<?php echo htmlspecialchars($product['uuid'] ?? '', ENT_QUOTES, 'UTF-8'); ?>"
+                >
 
+                <input type="hidden" name="selected_size" value="L">
+                <input type="hidden" name="selected_color" value="Orange">
 
+                <label class="label" for="quantity_input">Quantity</label>
 
-   
-            <button type="submit"
-                    name="add_to_cart"
-                    class="buy-btn">
+                <div class="quantity-box">
+                    <button type="button" id="decreaseQuantity" aria-label="Decrease quantity">−</button>
 
-                <i class="fas fa-shopping-cart"></i>
+                    <input
+                        type="number"
+                        name="quantity"
+                        id="quantity_input"
+                        value="1"
+                        min="1"
+                        step="1"
+                        required
+                    >
 
-                Add to Cart
+                    <button type="button" id="increaseQuantity" aria-label="Increase quantity">+</button>
+                </div>
 
-            </button>
+                <button type="submit" name="add_to_cart" class="buy-btn">
+                    <i class="fas fa-shopping-cart" aria-hidden="true"></i>
+                    Add to Cart
+                </button>
+            </form>
 
-        </form>
-
+        </section>
     </div>
-
-</div>
-
-<?php
-include('./admin/includes/footer.php');
-?>
+</main>
 
 <script>
+document.addEventListener("DOMContentLoaded", function () {
+    const quantityInput = document.getElementById("quantity_input");
+    const decreaseButton = document.getElementById("decreaseQuantity");
+    const increaseButton = document.getElementById("increaseQuantity");
+    const cartForm = document.getElementById("cartForm");
 
-
-function incrementQuantity() {
-
-    let input = document.getElementById("quantity_input");
-
-    let newVal = parseInt(input.value) + 1;
-
-    input.value = newVal;
-}
-
-
-
-
-
-
-function decrementQuantity() {
-
-    let input = document.getElementById("quantity_input");
-
-    if(parseInt(input.value) > 1){
-
-        input.value = parseInt(input.value) - 1;
-    }
-}
-
-
-
-
-
-
-const sizeBtns = document.querySelectorAll('.size-btn');
-
-const selectedSizeInput = document.getElementById('selected_size');
-
-sizeBtns.forEach(btn => {
-
-    btn.addEventListener('click', function() {
-
-        sizeBtns.forEach(b => b.classList.remove('active'));
-
-        this.classList.add('active');
-
-        selectedSizeInput.value = this.getAttribute('data-size');
-
+    decreaseButton.addEventListener("click", function () {
+        const quantity = parseInt(quantityInput.value, 10) || 1;
+        quantityInput.value = Math.max(1, quantity - 1);
     });
 
-});
-
-
-
-
-
-const colorCircles = document.querySelectorAll('.color-circle');
-
-const selectedColorInput = document.getElementById('selected_color');
-
-colorCircles.forEach(circle => {
-
-    circle.addEventListener('click', function() {
-
-        colorCircles.forEach(c => c.classList.remove('selected'));
-
-        this.classList.add('selected');
-
-        selectedColorInput.value = this.getAttribute('data-color');
-
+    increaseButton.addEventListener("click", function () {
+        const quantity = parseInt(quantityInput.value, 10) || 1;
+        quantityInput.value = quantity + 1;
     });
 
-});
+    quantityInput.addEventListener("change", function () {
+        const quantity = parseInt(quantityInput.value, 10);
 
+        if (!Number.isInteger(quantity) || quantity < 1) {
+            quantityInput.value = 1;
+        }
+    });
+
+    cartForm.addEventListener("submit", function (event) {
+        const quantity = Number(quantityInput.value);
+
+        if (!Number.isInteger(quantity) || quantity < 1) {
+            event.preventDefault();
+            quantityInput.value = 1;
+            quantityInput.focus();
+        }
+    });
+});
 </script>
+
+<?php include __DIR__ . "/admin/includes/footer.php"; ?>

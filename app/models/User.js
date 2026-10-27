@@ -3,20 +3,11 @@ class User {
     this.db = db;
   }
 
-  // Find a user by email for login.
   async findByEmail(email) {
     const [users] = await this.db.execute(
-      `SELECT
-        id,
-        uuid,
-        firstName,
-        lastName,
-        middleName,
-        username,
-        emailAddress,
-        password,
-        role,
-        accountStatus
+      `SELECT id, uuid, firstName, lastName, middleName, username,
+              emailAddress, password, role, accountStatus,
+              contactNumber, street, barangay, city
        FROM users
        WHERE emailAddress = ?
        LIMIT 1`,
@@ -26,7 +17,6 @@ class User {
     return users[0] || null;
   }
 
-  // Check whether an email or username already exists.
   async findByEmailOrUsername(email, username) {
     const [users] = await this.db.execute(
       `SELECT id
@@ -39,7 +29,6 @@ class User {
     return users[0] || null;
   }
 
-  // Create a new account as unverified.
   async create(userData) {
     const {
       uuid,
@@ -58,33 +47,23 @@ class User {
 
     const [result] = await this.db.execute(
       `INSERT INTO users (
-        uuid,
-        firstName,
-        lastName,
-        middleName,
-        emailAddress,
-        contactNumber,
-        username,
-        password,
-        street,
-        barangay,
-        city,
-        role,
-        accountStatus
+        uuid, firstName, lastName, middleName, emailAddress,
+        contactNumber, username, password, street, barangay, city,
+        role, accountStatus
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         uuid,
-        firstName,
-        lastName,
-        middleName || null,
-        email,
-        contact || null,
-        username,
+        firstName.trim(),
+        lastName.trim(),
+        middleName?.trim() || null,
+        email.trim(),
+        contact?.trim() || null,
+        username.trim(),
         hashedPassword,
-        street || null,
-        barangay || null,
-        city || null,
-        role || "user",
+        street?.trim() || null,
+        barangay?.trim() || null,
+        city?.trim() || null,
+        role || "customer",
         "unverified",
       ],
     );
@@ -92,7 +71,6 @@ class User {
     return result.insertId;
   }
 
-  // Save the SHA-256 verification token hash and expiration.
   async saveVerificationToken(userId, tokenHash, expiresAt) {
     const [result] = await this.db.execute(
       `UPDATE users
@@ -106,7 +84,6 @@ class User {
     return result.affectedRows === 1;
   }
 
-  // Find an account with a valid, unexpired verification token.
   async findByVerificationToken(tokenHash) {
     const [users] = await this.db.execute(
       `SELECT id, emailAddress, accountStatus
@@ -121,7 +98,6 @@ class User {
     return users[0] || null;
   }
 
-  // Activate the account and invalidate its verification token.
   async verifyEmail(userId) {
     const [result] = await this.db.execute(
       `UPDATE users
@@ -137,8 +113,6 @@ class User {
     return result.affectedRows === 1;
   }
 
-  // Upgrade an existing plaintext password to a bcrypt hash.
-  // This is only used when login detects a legacy plaintext password.
   async updatePasswordIfMatches(id, oldPassword, newHash) {
     const [result] = await this.db.execute(
       `UPDATE users

@@ -4,13 +4,31 @@
   box-sizing: border-box;
 }
 
-.navbar-brand {
+/* .navbar-brand {
   font-size: 2rem;
   color: black;
   font-family: "Lobster", sans-serif;
   display: block;
   margin-bottom: 0.5rem;
+} */
+
+.navbar-brand {
+  display: flex;
+  align-items: center;
 }
+
+.navbar-brand img {
+  width: auto;
+}
+
+.logo-full {
+  height: 48px;
+}
+
+.logo-small {
+  height: 36px;
+}
+
 
 .navbar-brand:hover {
   color: black;

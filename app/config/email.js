@@ -1,11 +1,9 @@
 const nodemailer = require("nodemailer");
 
-// Make sure the required Gmail settings exist in .env
 if (!process.env.SMTP_USER || !process.env.SMTP_APP_PASSWORD) {
   throw new Error("Missing SMTP_USER or SMTP_APP_PASSWORD in .env");
 }
 
-// Configure Gmail SMTP
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
@@ -14,7 +12,6 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// Verify the Gmail SMTP connection
 async function verifyEmailTransport() {
   try {
     await transporter.verify();
@@ -26,7 +23,6 @@ async function verifyEmailTransport() {
   }
 }
 
-// Send the account verification email
 async function sendVerificationEmail(email, verificationUrl) {
   if (!email || !verificationUrl) {
     throw new Error("Recipient email and verification URL are required.");
@@ -34,12 +30,10 @@ async function sendVerificationEmail(email, verificationUrl) {
 
   const safeEmail = String(email).trim();
 
-  // Validate the recipient email address
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(safeEmail)) {
     throw new Error("Invalid recipient email address.");
   }
 
-  // Only allow verification links from the configured application URL
   const appUrl = process.env.APP_URL || "http://localhost:3000";
   const allowedOrigin = new URL(appUrl).origin;
   const parsedVerificationUrl = new URL(verificationUrl);

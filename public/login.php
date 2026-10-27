@@ -1,52 +1,105 @@
+
 <?php
 session_start();
 
-$pageClass = "login-page";
+$pageClass = "index-page";
 
-include('admin/includes/header.php');
-include('admin/includes/topbar.php');
+include(__DIR__ . '/includes/header.php');
+include(__DIR__ . '/includes/topbar.php');
 ?>
 
-<section class="login d-flex align-items-center" style="height: 90vh;">
-    <div class="container">
-        <div class="row">
-            <div class="col-lg-4 m-auto text-center">
-                <h2 class="mb-4">Login</h2>
+<section class="loginOverlay">
+    <div class="container py-5 h-100">
+        <div class="row d-flex justify-content-center align-items-center h-100">
+            <div class="col-xl-10">
+                <div class="card rounded-3 text-black">
+                    <div class="row g-0">
 
-                <form id="loginForm" autocomplete="on">
-                    <input
-                        type="email"
-                        class="form-control mb-3"
-                        placeholder="Email"
-                        name="email"
-                        id="email"
-                        autocomplete="username"
-                        required
-                    >
+                        <div class="col-lg-6">
+                            <div class="card-body p-md-5 mx-md-4">
 
-                    <input
-                        type="password"
-                        class="form-control mb-3"
-                        placeholder="Password"
-                        name="password"
-                        id="password"
-                        autocomplete="current-password"
-                        required
-                    >
+                                <div class="text-center">
+                                    <img
+                                        src="/SoftEcoms/public/assets/img/svg/logo.svg"
+                                        style="width: 100px;"
+                                        alt="Sweetclaire">
 
-                    <button
-                        type="submit"
-                        class="btn1 w-100 mb-3"
-                        id="loginButton"
-                    >
-                        Login
-                    </button>
+                                    <h4 class="greet_login mt-1 mb-3 pb-1">
+                                        Welcome to SweetClaire!
+                                    </h4>
+                                </div>
 
-                    <p>
-                        Don't have an account?
-                        <a href="register">Register</a>
-                    </p>
-                </form>
+                                <form id="loginForm">
+                                    <p>Please login to your account</p>
+
+                                    <div class="mb-3">
+                                        <label class="form-label" for="email">
+                                            Email
+                                        </label>
+
+                                        <input
+                                            type="email"
+                                            id="email"
+                                            class="form-control"
+                                            placeholder="Email Address"
+                                            autocomplete="email"
+                                            required>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label" for="password">
+                                            Password
+                                        </label>
+
+                                        <input
+                                            type="password"
+                                            id="password"
+                                            class="form-control"
+                                            placeholder="Password"
+                                            autocomplete="current-password"
+                                            required>
+                                    </div>
+
+                                    <div class="d-grid pt-1 mb-3 pb-1">
+                                        <button
+                                            id="loginButton"
+                                            class="btn btn-primary gradient-custom-3 mb-3"
+                                            type="submit">
+                                            Login
+                                        </button>
+
+                                        <a
+                                            class="text-muted text-center"
+                                            href="/SoftEcoms/public/forgetpassword.php">
+                                            Forgot password?
+                                        </a>
+                                    </div>
+
+                                    <div class="d-flex align-items-center justify-content-center pb-4">
+                                        <p class="mb-0 me-2">
+                                            Don't have an account?
+                                        </p>
+
+                                        <a
+                                            href="/SoftEcoms/public/register.php"
+                                            class="btn btn-outline-danger">
+                                            Create new
+                                        </a>
+                                    </div>
+                                </form>
+
+                            </div>
+                        </div>
+
+                        <div class="col-lg-6 d-none d-lg-block">
+                            <img
+                                src="/SoftEcoms/public/assets/img/Top_Viewclair.jpg"
+                                alt="SweetClaire products"
+                                class="login-side-img">
+                        </div>
+
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -65,7 +118,7 @@ loginForm.addEventListener("submit", async function (event) {
     const password = document.getElementById("password").value;
 
     if (!email || !password) {
-        Swal.fire({
+        await Swal.fire({
             icon: "warning",
             title: "Missing information",
             text: "Please enter your email and password."
@@ -83,58 +136,51 @@ loginForm.addEventListener("submit", async function (event) {
                 "Content-Type": "application/json"
             },
             credentials: "include",
-            body: JSON.stringify({ email, password })
+            body: JSON.stringify({
+                email: email,
+                password: password
+            })
         });
 
-   
-        const responseText = await response.text();
-        let data;
-
-        try {
-            data = JSON.parse(responseText);
-        } catch {
-            console.error("Unexpected server response:", responseText);
-            throw new Error(
-                "The authentication server returned an invalid response."
-            );
-        }
+        const data = await response.json();
 
         if (!response.ok) {
             await Swal.fire({
-                toast: true,
-                position: "top-end",
                 icon: "error",
-                title: data.message || `Login failed (${response.status})`,
-                showConfirmButton: false,
-                timer: 3500,
-                timerProgressBar: true
+                title: "Login failed",
+                text: data.message || "Unable to log in."
             });
             return;
         }
 
+        // Admins go directly to their dashboard.
+        if (data.role === "admin") {
+            window.location.href =
+                data.redirect || "/SoftEcoms/public/admin/index.php";
+            return;
+        }
+
+        // Do not show the profile completion popup here.
+        // The homepage will check the profile after login.
         await Swal.fire({
             toast: true,
             position: "top-end",
             icon: "success",
-            title: data.message || "Login successful!",
+            title: "Login successful!",
             showConfirmButton: false,
-            timer: 1500,
-            timerProgressBar: true
+            timer: 1000
         });
 
-        if (data.redirect) {
-            window.location.href = data.redirect;
-        } else {
-            console.error("No redirect URL returned by the server.");
-        }
+        window.location.href =
+            data.redirect || "/SoftEcoms/public/index.php";
 
     } catch (error) {
-        console.error("Login request failed:", error);
+        console.error("Login error:", error);
 
-        Swal.fire({
+        await Swal.fire({
             icon: "error",
-            title: "Unable to log in",
-            text: error.message || "Could not connect to the authentication server. Check that Node.js is running."
+            title: "Connection Error",
+            text: "Could not connect to the authentication server. Make sure Node.js is running."
         });
 
     } finally {

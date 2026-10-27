@@ -1,169 +1,99 @@
-```php
 <?php
 session_start();
 
-$pageClass = "register-page";
+$pageClass = "index-page";
 
-include('admin/includes/header.php');
-include('admin/includes/topbar.php');
-include_once("../app/config/config.php");
+include_once __DIR__ . "/../app/config/config.php";
+include __DIR__ . "/includes/header.php";
+include __DIR__ . "/includes/topbar.php";
 ?>
 
-<section class="login py-5">
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-12 col-md-8 col-lg-6">
-                <div class="p-4">
+<section class="registerOverlay">
+    <div class="container py-5">
+        <div class="row d-flex justify-content-center align-items-center">
+            <div class="col">
+                <div class="card card-registration my-4">
+                    <div class="row g-0">
+                        <div class="col-xl-5 d-none d-xl-block registerSide"></div>
 
-                    <h2 class="mb-4 text-center">Create Account</h2>
+                        <div class="col-xl-7">
+                            <div class="card-body p-4 p-md-5 text-black">
+                                <h3 class="mb-4 text-uppercase text-center">Create Account</h3>
 
-                    <form id="registerForm" autocomplete="off">
+                                <form id="registerForm" autocomplete="on">
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label" for="firstName">
+                                                First Name <span class="text-danger">*</span>
+                                            </label>
+                                            <input type="text" class="form-control" id="firstName"
+                                                   name="firstName" required maxlength="100"
+                                                   autocomplete="given-name">
+                                        </div>
 
-                        <label for="firstName">
-                            First Name <span class="text-danger">*</span>
-                        </label>
-                        <input
-                            type="text"
-                            class="form-control mb-3"
-                            id="firstName"
-                            name="firstName"
-                            required
-                            autocomplete="given-name"
-                        >
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label" for="lastName">
+                                                Last Name <span class="text-danger">*</span>
+                                            </label>
+                                            <input type="text" class="form-control" id="lastName"
+                                                   name="lastName" required maxlength="100"
+                                                   autocomplete="family-name">
+                                        </div>
+                                    </div>
 
-                        <label for="lastName">
-                            Last Name <span class="text-danger">*</span>
-                        </label>
-                        <input
-                            type="text"
-                            class="form-control mb-3"
-                            id="lastName"
-                            name="lastName"
-                            required
-                            autocomplete="family-name"
-                        >
+                                    <div class="mb-3">
+                                        <label class="form-label" for="middleName">Middle Name (optional)</label>
+                                        <input type="text" class="form-control" id="middleName"
+                                               name="middleName" maxlength="100"
+                                               autocomplete="additional-name">
+                                    </div>
 
-                        <label for="middleName">Middle Name</label>
-                        <input
-                            type="text"
-                            class="form-control mb-3"
-                            id="middleName"
-                            name="middleName"
-                            autocomplete="additional-name"
-                        >
+                                    <div class="mb-3">
+                                        <label class="form-label" for="email">
+                                            Email Address <span class="text-danger">*</span>
+                                        </label>
+                                        <input type="email" class="form-control" id="email"
+                                               name="email" required maxlength="254"
+                                               autocomplete="email">
+                                    </div>
 
-                        <label for="email">
-                            Email <span class="text-danger">*</span>
-                        </label>
-                        <input
-                            type="email"
-                            class="form-control mb-3"
-                            id="email"
-                            name="email"
-                            required
-                            autocomplete="email"
-                        >
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label" for="password">
+                                                Password <span class="text-danger">*</span>
+                                            </label>
+                                            <input type="password" class="form-control" id="password"
+                                                   name="password" minlength="8" required
+                                                   autocomplete="new-password">
+                                        </div>
 
-                        <label for="contact">
-                            Contact Number <span class="text-danger">*</span>
-                        </label>
-                        <input
-                            type="tel"
-                            class="form-control mb-3"
-                            id="contact"
-                            name="contact"
-                            required
-                            autocomplete="tel"
-                        >
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label" for="confirmPassword">
+                                                Confirm Password <span class="text-danger">*</span>
+                                            </label>
+                                            <input type="password" class="form-control" id="confirmPassword"
+                                                   name="confirmPassword" minlength="8" required
+                                                   autocomplete="new-password">
+                                        </div>
+                                    </div>
 
-                        <label for="username">
-                            Username <span class="text-danger">*</span>
-                        </label>
-                        <input
-                            type="text"
-                            class="form-control mb-3"
-                            id="username"
-                            name="username"
-                            required
-                            autocomplete="username"
-                        >
+                                    <p class="small text-muted">
+                                        You can add your phone number and delivery address after verifying your email.
+                                    </p>
 
-                        <label for="password">
-                            Password <span class="text-danger">*</span>
-                        </label>
-                        <input
-                            type="password"
-                            class="form-control mb-3"
-                            id="password"
-                            name="password"
-                            minlength="8"
-                            required
-                            autocomplete="new-password"
-                        >
+                                    <button type="submit" id="registerButton"
+                                            class="btn btn-register w-100 mt-2 border-0">
+                                        Register
+                                    </button>
 
-                        <label for="confirmPassword">
-                            Confirm Password <span class="text-danger">*</span>
-                        </label>
-                        <input
-                            type="password"
-                            class="form-control mb-3"
-                            id="confirmPassword"
-                            name="confirmPassword"
-                            minlength="8"
-                            required
-                            autocomplete="new-password"
-                        >
-
-                        <label for="street">
-                            Street <span class="text-danger">*</span>
-                        </label>
-                        <input
-                            type="text"
-                            class="form-control mb-3"
-                            id="street"
-                            name="street"
-                            required
-                            autocomplete="street-address"
-                        >
-
-                        <label for="barangay">
-                            Barangay <span class="text-danger">*</span>
-                        </label>
-                        <input
-                            type="text"
-                            class="form-control mb-3"
-                            id="barangay"
-                            name="barangay"
-                            required
-                        >
-
-                        <label for="city">
-                            City <span class="text-danger">*</span>
-                        </label>
-                        <input
-                            type="text"
-                            class="form-control mb-3"
-                            id="city"
-                            name="city"
-                            required
-                            autocomplete="address-level2"
-                        >
-
-                        <button
-                            type="submit"
-                            id="registerButton"
-                            class="btn btn-success w-100 mt-2"
-                        >
-                            Register
-                        </button>
-
-                        <p class="text-center mt-3">
-                            Already have an account?
-                            <a href="/SoftEcoms/public/login.php">Login</a>
-                        </p>
-
-                    </form>
-
+                                    <p class="text-center mt-3 mb-0">
+                                        Already have an account?
+                                        <a href="/SoftEcoms/public/login.php">Login</a>
+                                    </p>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -171,7 +101,6 @@ include_once("../app/config/config.php");
 </section>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
 <script>
 const registerForm = document.getElementById("registerForm");
 const registerButton = document.getElementById("registerButton");
@@ -179,9 +108,7 @@ const registerButton = document.getElementById("registerButton");
 registerForm.addEventListener("submit", async function (event) {
     event.preventDefault();
 
-    const formData = new FormData(registerForm);
-
-    const data = Object.fromEntries(formData.entries());
+    const data = Object.fromEntries(new FormData(registerForm).entries());
 
     if (data.password !== data.confirmPassword) {
         Swal.fire({
@@ -198,9 +125,7 @@ registerForm.addEventListener("submit", async function (event) {
     try {
         const response = await fetch("http://localhost:3000/register", {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
+            headers: { "Content-Type": "application/json" },
             credentials: "include",
             body: JSON.stringify(data)
         });
@@ -218,17 +143,13 @@ registerForm.addEventListener("submit", async function (event) {
             confirmButtonText: "Go to Login"
         });
 
-        window.location.href =
-            result.redirect || "/SoftEcoms/public/login.php";
-
+        window.location.href = result.redirect || "/SoftEcoms/public/login.php";
     } catch (error) {
         console.error("Registration error:", error);
-
         Swal.fire({
             icon: "error",
             title: "Registration failed",
-            text: error.message ||
-                "Could not connect to the server. Please try again."
+            text: error.message || "Could not connect to the server. Please try again."
         });
     } finally {
         registerButton.disabled = false;
@@ -237,6 +158,4 @@ registerForm.addEventListener("submit", async function (event) {
 });
 </script>
 
-</body>
-</html>
-```
+<?php include __DIR__ . "/includes/footer.php"; ?>

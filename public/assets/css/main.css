@@ -1,18 +1,47 @@
+/* =========================================================
+   FONTS
+========================================================= */
+
 @font-face {
   font-family: "Coffee";
   src: url("../fonts/CoffeeShopDemo-Regular.otf") format("opentype");
 }
 
+/* =========================================================
+   GENERAL PAGE STYLES
+========================================================= */
+
 .index-page,
 .order-page,
 .cart-page,
 .product-page {
-  background: linear-gradient(to right, #abf2be, #f6d89c);
+  background: linear-gradient(
+    to right,
+    #efd9c3 0%,
+    #f0d5c6 22%,
+    #f1d0c9 50%,
+    #f3cacd 80%,
+    #f3c6d0 100%
+  );
   overflow-x: hidden;
 }
 
+.index-page *,
+.index-page *::before,
+.index-page *::after {
+  box-sizing: border-box;
+}
+
+.index-page img {
+  max-width: 100%;
+}
+
+/* =========================================================
+   HERO SECTION
+========================================================= */
+
 .index-page .intro {
-  background: url("../img/eclair_coffee.jpg") no-repeat center center;
+  background: url("../img/strawberry_theme.jpg") no-repeat center center;
   background-size: cover;
   min-height: 90vh;
   width: 100%;
@@ -34,6 +63,11 @@
   z-index: 2;
 }
 
+.index-page .hero-box {
+  padding-top: 7rem;
+  padding-bottom: 7rem;
+}
+
 .index-page .intro h1 {
   font-size: 4rem;
   font-weight: 700;
@@ -41,9 +75,13 @@
   text-shadow: 2px 2px 12px rgba(0, 0, 0, 0.5);
 }
 
+/* =========================================================
+   BUTTONS
+========================================================= */
+
 .index-page .btn1,
 .index-page .btn2 {
-  height: 48px;
+  min-height: 48px;
   border: none;
   outline: none;
   background-color: #2d8a4e;
@@ -54,24 +92,33 @@
   border-radius: 50px;
   cursor: pointer;
   transition: all 0.3s ease;
-  padding: 0 28px;
+  padding: 13px 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
 }
 
 .index-page .btn1 {
-  width: 35%;
+  min-width: 160px;
+  margin-top: 18px;
 }
 
 .index-page .btn2 {
-  width: 20%;
   min-width: 160px;
 }
 
 .index-page .btn1:hover,
 .index-page .btn2:hover {
   background-color: #236b3d;
+  color: #ffffff;
   transform: translateY(-2px);
   box-shadow: 0 6px 18px rgba(45, 138, 78, 0.35);
 }
+
+/* =========================================================
+   CONTINUOUS FEATURE CAROUSEL
+========================================================= */
 
 .index-page .new {
   overflow: hidden;
@@ -84,30 +131,31 @@
   object-fit: contain;
 }
 
-.carousel {
+.index-page .carousel {
   width: 100%;
   overflow: hidden;
   position: relative;
 }
 
-.track {
+.index-page .track {
   display: flex;
   align-items: center;
   width: max-content;
   animation: marquee 20s linear infinite;
+  will-change: transform;
 }
 
-.track:hover {
+.index-page .track:hover {
   animation-play-state: paused;
 }
 
-.carousel-group {
+.index-page .carousel-group {
   display: flex;
   align-items: center;
   flex-shrink: 0;
 }
 
-.carousel-item-custom {
+.index-page .carousel-item-custom {
   width: 250px;
   flex-shrink: 0;
   padding: 0 15px;
@@ -116,13 +164,17 @@
 
 @keyframes marquee {
   0% {
-    transform: translateX(0%);
+    transform: translateX(0);
   }
 
   100% {
     transform: translateX(-50%);
   }
 }
+
+/* =========================================================
+   SECTION HEADINGS
+========================================================= */
 
 .index-page .our_products {
   font-family: "Lobster", cursive;
@@ -134,7 +186,21 @@
   margin-bottom: 8px;
 }
 
-.section-subtitle {
+.index-page .greet_login {
+  font-family: "Lobster", cursive;
+  font-size: 29px;
+  color: #df5b55;
+  font-weight: bold;
+  text-align: center;
+  letter-spacing: 2px;
+  margin-bottom: 8px;
+}
+
+.index-page .section-heading {
+  width: 100%;
+}
+
+.index-page .section-subtitle {
   font-family: "Rubik", sans-serif;
   font-size: 1rem;
   color: #c0553a;
@@ -154,7 +220,85 @@
   margin-top: 10px;
 }
 
-.card-img-wrapper {
+/* =========================================================
+   SWEET TOOTHS CENTER-FOCUSED INFINITE PRODUCT CAROUSEL
+========================================================= */
+
+.index-page .product {
+  width: 100%;
+  overflow: hidden;
+}
+
+.index-page .product-slider-wrapper {
+  position: relative;
+  overflow: hidden;
+  padding: 30px 0;
+  width: 100%;
+}
+
+/* The JavaScript moves this entire track to center the active card. */
+.index-page .product-slider {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  width: max-content;
+  overflow: visible;
+  padding: 28px 0;
+  transform: translateX(0);
+  transition: transform 0.5s cubic-bezier(0.22, 0.61, 0.36, 1);
+  will-change: transform;
+}
+
+.index-page .product-slide {
+  flex: 0 0 clamp(230px, 30vw, 340px);
+  min-width: 0;
+  opacity: 0.58;
+  transform: scale(0.8);
+  transform-origin: center center;
+  transition:
+    transform 0.5s ease,
+    opacity 0.5s ease;
+  position: relative;
+}
+
+.index-page .product-card-link {
+  display: block;
+  height: 100%;
+  color: inherit;
+  text-decoration: none;
+}
+
+.index-page .product-card-link:focus-visible {
+  outline: 3px solid #2d8a4e;
+  outline-offset: 4px;
+  border-radius: 16px;
+}
+
+.index-page .product-card {
+  height: 100%;
+  background: #ffffff;
+  border-radius: 18px;
+  overflow: hidden;
+  transition: box-shadow 0.5s ease;
+}
+
+.index-page .product-slide.is-active {
+  opacity: 1;
+  transform: scale(1.08);
+  z-index: 2;
+}
+
+.index-page .product-slide.is-active .product-card {
+  box-shadow: 0 18px 38px rgba(45, 138, 78, 0.2) !important;
+}
+
+.index-page .product-slide.is-near {
+  opacity: 0.84;
+  transform: scale(0.88);
+  z-index: 1;
+}
+
+.index-page .product .card-img-wrapper {
   width: 100%;
   aspect-ratio: 4 / 3;
   overflow: hidden;
@@ -166,14 +310,15 @@
 }
 
 .index-page .product .card-img-top {
+  display: block;
   width: 100%;
   height: 100%;
   object-fit: contain;
   transition: transform 0.5s ease;
 }
 
-.index-page .product .card:hover .card-img-top {
-  transform: scale(1.08);
+.index-page .product-card:hover .card-img-top {
+  transform: scale(1.05);
 }
 
 .index-page .product .card-body {
@@ -184,48 +329,110 @@
   font-weight: 700;
   font-size: 1.05rem;
   color: #1e2f1e;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
+  overflow-wrap: anywhere;
 }
 
 .index-page .product .card-text {
   font-size: 0.9rem;
   color: #5a6b5a;
-  line-height: 1.4;
+  line-height: 1.5;
+  margin-bottom: 12px;
 }
 
-.card-price {
+.index-page .card-price {
   font-weight: 700;
   font-size: 1.15rem;
   color: #c0392b;
+  margin-top: auto;
+  margin-bottom: 0;
+}
+
+.index-page .product-slider-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: #2d8a4e;
+  color: #ffffff;
+  font-size: 19px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.18);
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+.index-page .product-slider-btn:hover:not(:disabled) {
+  background: #236b3d;
+  transform: translateY(-50%) scale(1.08);
+}
+
+.index-page .product-slider-btn:focus-visible {
+  outline: 3px solid #df5b55;
+  outline-offset: 3px;
+}
+
+.index-page .product-slider-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.index-page .product-prev {
+  left: 12px;
+}
+
+.index-page .product-next {
+  right: 12px;
+}
+
+.index-page .slider-indicator {
+  text-align: center;
+  color: #735f56;
+  font-family: "Rubik", sans-serif;
+  font-size: 0.85rem;
   margin-top: 4px;
 }
 
-.community-card {
+/* =========================================================
+   COMMUNITY CARDS
+========================================================= */
+
+.index-page .community-card {
   transition:
     transform 0.3s ease,
     box-shadow 0.3s ease;
   background: #ffffff;
 }
 
-.community-card:hover {
+.index-page .community-card:hover {
   transform: translateY(-6px);
   box-shadow: 0 14px 30px rgba(0, 0, 0, 0.12);
 }
 
-.community-img-wrapper {
+.index-page .community-img-wrapper {
   width: 100%;
   aspect-ratio: 4 / 3;
   overflow: hidden;
 }
 
-.community-img {
+.index-page .community-img {
+  display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
   transition: transform 0.5s ease;
 }
 
-.community-card:hover .community-img {
+.index-page .community-card:hover .community-img {
   transform: scale(1.06);
 }
 
@@ -245,19 +452,23 @@
   line-height: 1.5;
 }
 
-.best-card {
+/* =========================================================
+   BEST SELLERS
+========================================================= */
+
+.index-page .best-card {
   background: #ffffff;
   transition:
     transform 0.3s ease,
     box-shadow 0.3s ease;
 }
 
-.best-card:hover {
+.index-page .best-card:hover {
   transform: translateY(-6px);
   box-shadow: 0 14px 30px rgba(0, 0, 0, 0.12);
 }
 
-.best-img-wrapper {
+.index-page .best-img-wrapper {
   width: 100%;
   aspect-ratio: 1 / 1;
   overflow: hidden;
@@ -268,34 +479,39 @@
   padding: 20px;
 }
 
-.best-img {
+.index-page .best-img {
   width: 100%;
   height: 100%;
   object-fit: contain;
   transition: transform 0.5s ease;
 }
 
-.best-card:hover .best-img {
+.index-page .best-card:hover .best-img {
   transform: scale(1.08);
 }
 
-.best-title {
+.index-page .best-title {
   font-size: 0.93rem;
   font-weight: 600;
   color: #1e2f1e;
-  margin: 14px 0 4px 0;
+  margin: 14px 0 4px;
+  overflow-wrap: anywhere;
 }
 
-.best-price {
+.index-page .best-price {
   color: #c0392b;
   font-weight: 700;
   font-size: 1.1rem;
   margin-bottom: 8px;
 }
 
-.e_clair {
+/* =========================================================
+   CALL TO ACTION
+========================================================= */
+
+.index-page .e_clair {
   background:
-    linear-gradient(rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.55)),
+    linear-gradient(rgba(244, 201, 201, 0.55), rgba(224, 152, 203, 0.55)),
     url("../img/friends.jpg") no-repeat center center;
   background-size: cover;
   width: 100%;
@@ -304,19 +520,23 @@
   align-items: center;
 }
 
-.e_clair h1 {
+.index-page .e_clair h1 {
   font-family: "Lobster", cursive;
   font-size: 5rem;
   font-weight: 700;
   text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.4);
 }
 
-.cta-subtitle {
+.index-page .cta-subtitle {
   font-weight: 400;
   font-size: 1.05rem;
   opacity: 0.9;
   color: #ffffff;
 }
+
+/* =========================================================
+   FOOTER
+========================================================= */
 
 .site-footer {
   background: #1a2e1a;
@@ -359,21 +579,21 @@
   margin-bottom: 8px;
 }
 
-.footer-divider {
+.site-footer .footer-divider {
   border-color: rgba(255, 255, 255, 0.1);
   margin: 30px 0 18px;
 }
 
-.footer-bottom {
+.site-footer .footer-bottom {
   font-size: 0.82rem;
   color: #acccac;
 }
 
-.footer-heart {
+.site-footer .footer-heart {
   color: #c0553a;
 }
 
-.footer-social a {
+.site-footer .footer-social a {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -388,18 +608,22 @@
   transition: all 0.3s ease;
 }
 
-.footer-social a:hover {
+.site-footer .footer-social a:hover {
   background: #2d8a4e;
-  color: #fff;
+  color: #ffffff;
   transform: translateY(-2px);
 }
+
+/* =========================================================
+   TABLET RESPONSIVENESS
+========================================================= */
 
 @media (max-width: 992px) {
   .index-page .intro h1 {
     font-size: 3rem;
   }
 
-  .e_clair h1 {
+  .index-page .e_clair h1 {
     font-size: 3.8rem;
   }
 
@@ -407,10 +631,26 @@
     font-size: 36px;
   }
 
-  .carousel-item-custom {
+  .index-page .carousel-item-custom {
     width: 220px;
   }
+
+  .index-page .product-slider {
+    gap: 18px;
+  }
+
+  .index-page .product-slide {
+    flex-basis: clamp(220px, 42vw, 300px);
+  }
+
+  .index-page .product .card-img-wrapper {
+    aspect-ratio: 4 / 3;
+  }
 }
+
+/* =========================================================
+   MOBILE RESPONSIVENESS
+========================================================= */
 
 @media (max-width: 768px) {
   .index-page .intro {
@@ -423,15 +663,14 @@
   }
 
   .index-page .btn1 {
-    width: 70%;
+    min-width: 180px;
   }
 
   .index-page .btn2 {
-    width: 60%;
-    min-width: auto;
+    min-width: 160px;
   }
 
-  .e_clair h1 {
+  .index-page .e_clair h1 {
     font-size: 3rem;
   }
 
@@ -439,24 +678,66 @@
     font-size: 32px;
   }
 
-  .section-subtitle {
+  .index-page .section-subtitle {
     font-size: 0.9rem;
   }
 
-  .card-img-wrapper,
-  .best-img-wrapper {
-    aspect-ratio: 1 / 1;
-  }
-
-  .carousel-item-custom {
+  .index-page .carousel-item-custom {
     width: 180px;
     padding: 0 10px;
   }
 
-  .track {
+  .index-page .track {
     animation-duration: 14s;
   }
+
+  .index-page .new img {
+    max-width: 100px;
+    height: 100px;
+  }
+
+  .index-page .product-slider {
+    gap: 14px;
+  }
+
+  .index-page .product-slide {
+    flex-basis: 72vw;
+  }
+
+  .index-page .product-slider-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 14px;
+  }
+
+  .index-page .product .card-body {
+    padding: 14px 12px 16px;
+  }
+
+  .index-page .product .card-title {
+    font-size: 0.98rem;
+  }
+
+  .index-page .product .card-text {
+    font-size: 0.85rem;
+  }
+
+  .index-page .card-price {
+    font-size: 1.05rem;
+  }
+
+  .index-page .best-img-wrapper {
+    aspect-ratio: 4 / 3;
+  }
+
+  .index-page .community-img-wrapper {
+    aspect-ratio: 3 / 2;
+  }
 }
+
+/* =========================================================
+   SMALL MOBILE SCREENS
+========================================================= */
 
 @media (max-width: 576px) {
   .index-page .intro h1 {
@@ -465,21 +746,22 @@
 
   .index-page .our_products {
     font-size: 28px;
+    letter-spacing: 1px;
   }
 
-  .e_clair h1 {
+  .index-page .e_clair h1 {
     font-size: 2.2rem;
   }
 
   .index-page .btn1 {
-    width: 85%;
+    min-width: 160px;
   }
 
   .index-page .btn2 {
-    width: 80%;
+    min-width: 150px;
   }
 
-  .carousel-item-custom {
+  .index-page .carousel-item-custom {
     width: 150px;
     padding: 0 8px;
   }
@@ -489,30 +771,48 @@
     height: 90px;
   }
 
-  .track {
+  .index-page .track {
     animation-duration: 10s;
   }
 
-  .card-img-wrapper,
-  .best-img-wrapper {
-    aspect-ratio: 4 / 3;
-    padding: 10px;
+  .index-page .product-slider {
+    gap: 10px;
+    padding: 20px 0;
   }
 
-  .community-img-wrapper {
-    aspect-ratio: 3 / 2;
+  .index-page .product-slide {
+    flex-basis: 78vw;
+  }
+
+  .index-page .product-slider-btn {
+    width: 30px;
+    height: 30px;
+    font-size: 12px;
+  }
+
+  .index-page .product .card-img-wrapper {
+    aspect-ratio: 4 / 3;
+    padding: 12px;
   }
 
   .index-page .product .card-body {
-    padding: 12px 10px 16px;
+    padding: 14px 12px 16px;
   }
 
   .index-page .product .card-title {
     font-size: 0.95rem;
   }
 
-  .card-price {
+  .index-page .card-price {
     font-size: 1rem;
+  }
+
+  .index-page .community-card .card-body {
+    padding: 18px 14px;
+  }
+
+  .index-page .best-img-wrapper {
+    padding: 10px;
   }
 
   .site-footer {
@@ -524,9 +824,34 @@
     margin-bottom: 25px;
   }
 
-  .footer-bottom {
+  .site-footer .footer-bottom {
     flex-direction: column;
     gap: 6px;
     text-align: center;
+  }
+}
+
+/* =========================================================
+   REDUCED MOTION ACCESSIBILITY
+========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .index-page .track {
+    animation: none;
+  }
+
+  .index-page .product-slider {
+    transition: none;
+  }
+
+  .index-page .product-card,
+  .index-page .product .card-img-top,
+  .index-page .community-card,
+  .index-page .community-img,
+  .index-page .best-card,
+  .index-page .best-img,
+  .index-page .btn1,
+  .index-page .btn2 {
+    transition: none;
   }
 }

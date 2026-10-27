@@ -1,0 +1,61 @@
+.loginOverlay .gradient-custom-2 {
+/* fallback for old browsers */
+background: #fccb90;
+
+/* Chrome 10-25, Safari 5.1-6 */
+background: -webkit-linear-gradient(to right, #ee7724, #d8363a, #dd3675, #b44593);
+
+/* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
+background: linear-gradient(to right, #ee7724, #d8363a, #dd3675, #b44593);
+}
+
+
+/* this custom 3 is what I use in the login button! */
+.loginOverlay .gradient-custom-3 {
+  /* Fallback for old browsers */
+  background: #FCB09D;
+
+  /* Chrome 10-25, Safari 5.1-6 */
+  background: -webkit-linear-gradient(to top, #ED8282 0%, #FCB09D 31%, #FCB88D 58%, #FCB88D 81%);
+
+  /* Modern standard browsers */
+  background: linear-gradient(to top, #ED8282 0%, #FCB09D 31%, #FCB88D 58%, #FCB88D 81%);
+}
+
+.loginOverlay .gradient-custom-3 {
+  /* Fallback for old browsers */
+  background: #FF9B4F;
+
+  /* Chrome 10-25, Safari 5.1-6 */
+  background: -webkit-linear-gradient(to right, #F56C6C 0%, #FF9B4F 66%, #FFA1A1 84%);
+
+  /* Modern standard browsers */
+  background: linear-gradient(to right, #F56C6C 0%, #FF9B4F 66%, #FFA1A1 84%);
+}
+
+
+@media (min-width: 768px) {
+.loginOverlay .gradient-form {
+height: 100vh !important;
+}
+}
+@media (min-width: 769px) {
+.loginOverlay .gradient-custom-2 {
+border-top-right-radius: .3rem;
+border-bottom-right-radius: .3rem;
+}
+}
+
+.loginOverlay {
+  min-height: 100vh;
+  background:
+    linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)),
+    url("/SoftEcoms/public/assets/img/strawberry_theme.jpg") center / cover no-repeat;
+}
+
+.loginOverlay .login-side-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 0 .3rem .3rem 0;
+}
