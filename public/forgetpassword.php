@@ -43,7 +43,7 @@ include('admin/includes/topbar.php');
 
                     <p class="mb-0">
                         
-                        <a href="register" class="text-decoration-none">Back to Login</a>
+                        <a href="login.php" class="text-decoration-none">Back to Login</a>
                     </p>
                 </form>
 
