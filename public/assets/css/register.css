@@ -8,21 +8,19 @@
 
 /* (background) */
 .registerOverlay {
+  min-height: 100vh;
   background:
-    linear-gradient(rgba(0, 0, 0, 0.25), rgba(0, 0, 0, 0.25)),
+    linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)),
     url("/SoftEcoms/public/assets/img/strawberry_theme.jpg") center / cover no-repeat;
-  min-height: 100%;
 }
 
 
 /* change here if gusto e change ang img sa register */
 .registerSide {
       background:
-    linear-gradient(rgba(0, 0, 0, 0.25), rgba(0, 0, 0, 0.25)),
+    linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)),
     url("/SoftEcoms/public/assets/img/for_peeps.jpg") center / cover no-repeat;
   min-height: 100%;
-
-
 }
 
 /* Register button, same gradient idea as the login button */

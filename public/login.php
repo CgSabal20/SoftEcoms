@@ -26,18 +26,15 @@ include(__DIR__ . '/includes/topbar.php');
 
 
                                 <form id="loginForm">
-                                    <p>Please login to your account</p>
 
                                     <div class="mb-3">
-                                        <label class="form-label" for="email">Email</label>
-                                        <input type="email" id="email" class="form-control"
-                                            placeholder="Email Address">
+                                        <label class="form-label" for="email">Email Address</label>
+                                        <input type="email" id="email" class="form-control">
                                     </div>
 
                                     <div class="mb-3">
                                         <label class="form-label" for="password">Password</label>
-                                        <input type="password" id="password" class="form-control"
-                                            placeholder="Password">
+                                        <input type="password" id="password" class="form-control">
                                     </div>
 
                                     <div class="d-grid pt-1 mb-3 pb-1">
@@ -69,9 +66,9 @@ include(__DIR__ . '/includes/topbar.php');
                         </div> -->
 
                         <!-- The right side sa login -->
-                        <div class="col-lg-6 d-none d-lg-block">
+                        <div class="col-lg-6">
                             <img src="/SoftEcoms/public/assets/img/Top_Viewclair.jpg"
-                                alt=""
+                                alt="Login side image"
                                 class="login-side-img">
                         </div>
 
