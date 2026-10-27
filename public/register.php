@@ -1,169 +1,143 @@
-```php
 <?php
 session_start();
 
-$pageClass = "register-page";
+$pageClass = "index-page";
 
-include('admin/includes/header.php');
-include('admin/includes/topbar.php');
+include('includes/header.php');
+include('includes/topbar.php');
 include_once("../app/config/config.php");
 ?>
 
-<section class="login py-5">
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-12 col-md-8 col-lg-6">
-                <div class="p-4">
+<section class="registerOverlay">
+    <div class="container py-5">
+        <div class="row d-flex justify-content-center align-items-center">
+            <div class="col">
+                <div class="card card-registration my-4">
+                    <div class="row g-0">
 
-                    <h2 class="mb-4 text-center">Create Account</h2>
+                    <!-- ang right side na img, I figured na maka save ko og time and pag pangita if in ani ko ni hehe! --> 
+                        <div class="col-xl-5 d-none d-xl-block registerSide"></div>
 
-                    <form id="registerForm" autocomplete="off">
+                        <!-- Right side ang form -->
+                        <div class="col-xl-7">
+                            <div class="card-body p-4 p-md-5 text-black">
 
-                        <label for="firstName">
-                            First Name <span class="text-danger">*</span>
-                        </label>
-                        <input
-                            type="text"
-                            class="form-control mb-3"
-                            id="firstName"
-                            name="firstName"
-                            required
-                            autocomplete="given-name"
-                        >
+                                <h3 class="mb-4 text-uppercase text-center">Create Account</h3>
 
-                        <label for="lastName">
-                            Last Name <span class="text-danger">*</span>
-                        </label>
-                        <input
-                            type="text"
-                            class="form-control mb-3"
-                            id="lastName"
-                            name="lastName"
-                            required
-                            autocomplete="family-name"
-                        >
+                                <form id="registerForm" autocomplete="off">
 
-                        <label for="middleName">Middle Name</label>
-                        <input
-                            type="text"
-                            class="form-control mb-3"
-                            id="middleName"
-                            name="middleName"
-                            autocomplete="additional-name"
-                        >
+                                    <!-- Names -->
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label" for="firstName">
+                                                First Name <span class="text-danger">*</span>
+                                            </label>
+                                            <input type="text" class="form-control" id="firstName"
+                                                   name="firstName" required autocomplete="given-name">
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label" for="lastName">
+                                                Last Name <span class="text-danger">*</span>
+                                            </label>
+                                            <input type="text" class="form-control" id="lastName"
+                                                   name="lastName" required autocomplete="family-name">
+                                        </div>
+                                    </div>
 
-                        <label for="email">
-                            Email <span class="text-danger">*</span>
-                        </label>
-                        <input
-                            type="email"
-                            class="form-control mb-3"
-                            id="email"
-                            name="email"
-                            required
-                            autocomplete="email"
-                        >
+                                    <div class="mb-3">
+                                        <label class="form-label" for="middleName">Middle Name</label>
+                                        <input type="text" class="form-control" id="middleName"
+                                               name="middleName" autocomplete="additional-name">
+                                    </div>
 
-                        <label for="contact">
-                            Contact Number <span class="text-danger">*</span>
-                        </label>
-                        <input
-                            type="tel"
-                            class="form-control mb-3"
-                            id="contact"
-                            name="contact"
-                            required
-                            autocomplete="tel"
-                        >
+                                    <!-- Contact -->
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label" for="email">
+                                                Email <span class="text-danger">*</span>
+                                            </label>
+                                            <input type="email" class="form-control" id="email"
+                                                   name="email" required autocomplete="email">
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label" for="contact">
+                                                Contact Number <span class="text-danger">*</span>
+                                            </label>
+                                            <input type="tel" class="form-control" id="contact"
+                                                   name="contact" required autocomplete="tel">
+                                        </div>
+                                    </div>
 
-                        <label for="username">
-                            Username <span class="text-danger">*</span>
-                        </label>
-                        <input
-                            type="text"
-                            class="form-control mb-3"
-                            id="username"
-                            name="username"
-                            required
-                            autocomplete="username"
-                        >
+                                    <!-- Account -->
+                                    <div class="mb-3">
+                                        <label class="form-label" for="username">
+                                            Username <span class="text-danger">*</span>
+                                        </label>
+                                        <input type="text" class="form-control" id="username"
+                                               name="username" required autocomplete="username">
+                                    </div>
 
-                        <label for="password">
-                            Password <span class="text-danger">*</span>
-                        </label>
-                        <input
-                            type="password"
-                            class="form-control mb-3"
-                            id="password"
-                            name="password"
-                            minlength="8"
-                            required
-                            autocomplete="new-password"
-                        >
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label" for="password">
+                                                Password <span class="text-danger">*</span>
+                                            </label>
+                                            <input type="password" class="form-control" id="password"
+                                                   name="password" minlength="8" required
+                                                   autocomplete="new-password">
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label" for="confirmPassword">
+                                                Confirm Password <span class="text-danger">*</span>
+                                            </label>
+                                            <input type="password" class="form-control" id="confirmPassword"
+                                                   name="confirmPassword" minlength="8" required
+                                                   autocomplete="new-password">
+                                        </div>
+                                    </div>
 
-                        <label for="confirmPassword">
-                            Confirm Password <span class="text-danger">*</span>
-                        </label>
-                        <input
-                            type="password"
-                            class="form-control mb-3"
-                            id="confirmPassword"
-                            name="confirmPassword"
-                            minlength="8"
-                            required
-                            autocomplete="new-password"
-                        >
+                                    <!-- Address -->
+                                    <!-- <div class="mb-3">
+                                        <label class="form-label" for="street">
+                                            Street <span class="text-danger">*</span>
+                                        </label>
+                                        <input type="text" class="form-control" id="street"
+                                               name="street" required autocomplete="street-address">
+                                    </div>
 
-                        <label for="street">
-                            Street <span class="text-danger">*</span>
-                        </label>
-                        <input
-                            type="text"
-                            class="form-control mb-3"
-                            id="street"
-                            name="street"
-                            required
-                            autocomplete="street-address"
-                        >
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label" for="barangay">
+                                                Barangay <span class="text-danger">*</span>
+                                            </label>
+                                            <input type="text" class="form-control" id="barangay"
+                                                   name="barangay" required>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label" for="city">
+                                                City <span class="text-danger">*</span>
+                                            </label>
+                                            <input type="text" class="form-control" id="city"
+                                                   name="city" required autocomplete="address-level2">
+                                        </div>
+                                    </div> -->
 
-                        <label for="barangay">
-                            Barangay <span class="text-danger">*</span>
-                        </label>
-                        <input
-                            type="text"
-                            class="form-control mb-3"
-                            id="barangay"
-                            name="barangay"
-                            required
-                        >
+                                    <button type="submit" id="registerButton"
+                                            class="btn btn-register w-100 mt-2 border-0">
+                                        Register
+                                    </button>
 
-                        <label for="city">
-                            City <span class="text-danger">*</span>
-                        </label>
-                        <input
-                            type="text"
-                            class="form-control mb-3"
-                            id="city"
-                            name="city"
-                            required
-                            autocomplete="address-level2"
-                        >
+                                    <p class="text-center mt-3 mb-0">
+                                        Already have an account?
+                                        <a href="/SoftEcoms/public/login.php">Login</a>
+                                    </p>
 
-                        <button
-                            type="submit"
-                            id="registerButton"
-                            class="btn btn-success w-100 mt-2"
-                        >
-                            Register
-                        </button>
+                                </form>
 
-                        <p class="text-center mt-3">
-                            Already have an account?
-                            <a href="/SoftEcoms/public/login.php">Login</a>
-                        </p>
+                            </div>
+                        </div>
 
-                    </form>
-
+                    </div>
                 </div>
             </div>
         </div>
@@ -239,4 +213,3 @@ registerForm.addEventListener("submit", async function (event) {
 
 </body>
 </html>
-```

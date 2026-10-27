@@ -7,12 +7,15 @@
 .order-page,
 .cart-page,
 .product-page {
-  background: linear-gradient(to right, #abf2be, #f6d89c);
+  background: linear-gradient(to right, #EFD9C3 0%, #F0D5C6 22%, #F1D0C9 50%, #F3CACD 80%, #F3C6D0 100%);
   overflow-x: hidden;
 }
 
+
+/* change img here  */
 .index-page .intro {
-  background: url("../img/eclair_coffee.jpg") no-repeat center center;
+  /* background: url("../img/eclair_coffee.jpg") no-repeat center center; */
+  background: url("../img/strawberry_theme.jpg") no-repeat center center; 
   background-size: cover;
   min-height: 90vh;
   width: 100%;
@@ -20,6 +23,19 @@
   display: flex;
   align-items: center;
 }
+
+/* this is new for the styling I need for the container that holds the hero page-- kadtong (Now Available)*/
+/* I used this because, its more scalable considering if we also want to make sure it works in mobile. */
+.hero-box {
+  padding-top: 7rem;
+  padding-bottom: 7rem;
+}
+
+
+
+
+
+
 
 .index-page .intro::before {
   content: "";
@@ -128,6 +144,16 @@
   font-family: "Lobster", cursive;
   font-size: 42px;
   color: #2d8a4e;
+  font-weight: bold;
+  text-align: center;
+  letter-spacing: 2px;
+  margin-bottom: 8px;
+}
+
+.index-page .greet_login {
+  font-family: "Lobster", cursive;
+  font-size: 29px;
+  color: #df5b55;
   font-weight: bold;
   text-align: center;
   letter-spacing: 2px;
@@ -295,7 +321,7 @@
 
 .e_clair {
   background:
-    linear-gradient(rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.55)),
+    linear-gradient(rgba(244, 201, 201, 0.55), rgba(224, 152, 203, 0.55)),
     url("../img/friends.jpg") no-repeat center center;
   background-size: cover;
   width: 100%;

@@ -1,7 +1,7 @@
 <?php 
 session_start();
 
-$pageClass = "product-page";
+$pageClass = "home-page";
 
 include('./admin/includes/header.php');
 include('./admin/includes/topbar.php');
