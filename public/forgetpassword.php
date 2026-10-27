@@ -1,10 +1,10 @@
 <?php
 session_start();
 
-$pageClass = "login-page";
+$pageClass = "register-page";
 
-include('admin/includes/header.php');
-include('admin/includes/topbar.php');
+include(__DIR__ . '/includes/header.php');
+include(__DIR__ . '/includes/topbar.php');
 ?>
 
 <section class="login d-flex align-items-center" style="height: 90vh;">
@@ -16,7 +16,7 @@ include('admin/includes/topbar.php');
                 <form id="forgetpasswordForm" autocomplete="on" class="bg-white p-5 rounded-4 shadow text-center">
                     
                     
-                    <h3 class="mb-4 fw-bold">Forget your Password</h3>
+                    <h3 class="mb-4 fw-bold">Forgot Password?</h3>
                     <p>Please enter the email address you'd like your password reset information sent to</p>
 
                     <input

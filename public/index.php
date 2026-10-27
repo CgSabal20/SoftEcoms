@@ -137,7 +137,10 @@ if (!$bestResult) {
 
     <div class="row">
       <div class="col-lg-12 text-center mt-4">
-        <button class="btn2">Click For More</button>
+        <a class="btn2" href="order.php"
+          style="display: inline-flex; align-items: center; justify-content: center; text-decoration: none;">
+            Click For More
+        </a>
       </div>
     </div>
   </div>
