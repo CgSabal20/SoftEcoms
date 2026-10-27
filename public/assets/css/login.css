@@ -46,6 +46,16 @@ border-bottom-right-radius: .3rem;
 }
 }
 
+/* Forgot password hover effect */
+.text-muted.text-center {
+    transition: color 0.3s ease;
+}
+
+.text-muted.text-center:hover {
+    color: #0d6efd !important;
+    text-decoration: underline;
+}
+
 .loginOverlay {
   min-height: 100vh;
   background:
@@ -84,7 +94,7 @@ border-bottom-right-radius: .3rem;
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    color: #333;
+    color: #dc3545;
     text-decoration: none;
     font-size: 15px;
     font-weight: 500;
@@ -92,5 +102,10 @@ border-bottom-right-radius: .3rem;
 }
 
 .back-btn:hover {
-    color: #dc3545;
+    color: #333;
+}
+
+.panel {
+    position: relative;
+    top: 90px; 
 }
