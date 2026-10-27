@@ -47,7 +47,7 @@ include(__DIR__ . '/includes/topbar.php');
 
                                     <div class="d-flex align-items-center justify-content-center pb-4">
                                         <p class="mb-0 me-2">Don't have an account?</p>
-                                        <button type="button" data-mdb-button-init data-mdb-ripple-init class="btn btn-outline-danger">Create new</button>
+                                        <a href="register.php" data-mdb-button-init data-mdb-ripple-init class="btn btn-outline-danger">Create new</a>
                                     </div>
 
 
