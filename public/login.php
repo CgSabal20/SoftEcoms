@@ -16,6 +16,10 @@ include(__DIR__ . '/includes/topbar.php');
                         <div class="col-lg-6">
                             <div class="card-body p-md-5 mx-md-4">
 
+                                <div class="login-back">
+                                    <a href="index.php" class="back-btn"><i class="fas fa-arrow-left"></i> Back</a>
+                                </div>
+
                                 <div class="text-center">
                                     <img src="/SoftEcoms/public/assets/img/svg/logo.svg"
                                         style="width: 100px;" alt="Sweetclaire">
