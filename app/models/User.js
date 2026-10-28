@@ -71,6 +71,10 @@ class User {
     return result.insertId;
   }
 
+  // ==========================================
+  // EMAIL VERIFICATION
+  // ==========================================
+
   async saveVerificationToken(userId, tokenHash, expiresAt) {
     const [result] = await this.db.execute(
       `UPDATE users
@@ -112,6 +116,55 @@ class User {
 
     return result.affectedRows === 1;
   }
+
+  // ==========================================
+  // PASSWORD RESET
+  // ==========================================
+
+  async savePasswordResetToken(userId, tokenHash, expiresAt) {
+    const [result] = await this.db.execute(
+      `UPDATE users
+       SET reset_token_hash = ?,
+           reset_token_expires = ?
+       WHERE id = ?
+         AND accountStatus = 'active'`,
+      [tokenHash, expiresAt, userId],
+    );
+
+    return result.affectedRows === 1;
+  }
+
+  async clearPasswordResetToken(userId) {
+    const [result] = await this.db.execute(
+      `UPDATE users
+       SET reset_token_hash = NULL,
+           reset_token_expires = NULL
+       WHERE id = ?`,
+      [userId],
+    );
+
+    return result.affectedRows === 1;
+  }
+
+  async resetPasswordWithToken(tokenHash, newPasswordHash) {
+    // Updating the password and clearing the token happen atomically.
+    const [result] = await this.db.execute(
+      `UPDATE users
+       SET password = ?,
+           reset_token_hash = NULL,
+           reset_token_expires = NULL
+       WHERE reset_token_hash = ?
+         AND reset_token_expires > NOW()
+         AND accountStatus = 'active'`,
+      [newPasswordHash, tokenHash],
+    );
+
+    return result.affectedRows === 1;
+  }
+
+  // ==========================================
+  // EXISTING PASSWORD UPDATE
+  // ==========================================
 
   async updatePasswordIfMatches(id, oldPassword, newHash) {
     const [result] = await this.db.execute(

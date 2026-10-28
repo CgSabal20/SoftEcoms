@@ -10,9 +10,9 @@ const Authentication = require("./app/controllers/Authentication");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// ==============================
+// ==========================================
 // CORS CONFIGURATION
-// ==============================
+// ==========================================
 app.use(
   cors({
     origin: process.env.FRONTEND_ORIGIN || "http://localhost",
@@ -20,15 +20,15 @@ app.use(
   }),
 );
 
-// ==============================
+// ==========================================
 // MIDDLEWARE
-// ==============================
+// ==========================================
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ==============================
+// ==========================================
 // SESSION CONFIGURATION
-// ==============================
+// ==========================================
 if (!process.env.SESSION_SECRET) {
   throw new Error("SESSION_SECRET is missing from .env");
 }
@@ -48,9 +48,9 @@ app.use(
   }),
 );
 
-// ==============================
+// ==========================================
 // START SERVER
-// ==============================
+// ==========================================
 async function startServer() {
   const db = mysql.createPool({
     host: process.env.DB_HOST || "localhost",
@@ -61,53 +61,59 @@ async function startServer() {
     connectionLimit: 10,
   });
 
-  // Verify database connection
+  // Verify database connection.
   await db.query("SELECT 1");
   console.log("MySQL connected successfully!");
 
-  // Initialize authentication controller
+  // Initialize authentication controller.
   const auth = new Authentication(db);
 
-  // ==============================
+  // ==========================================
   // HOME / HEALTH CHECK
-  // ==============================
+  // ==========================================
   app.get("/", (req, res) => {
     res.send("Sweet! authentication server is running.");
   });
 
-  // ==============================
+  // ==========================================
   // REGISTER
-  // ==============================
+  // ==========================================
   app.post("/register", auth.register);
 
-  // ==============================
+  // ==========================================
+  // PASSWORD RESET
+  // ==========================================
+  app.post("/forgot-password", auth.forgotPassword);
+  app.post("/reset-password", auth.resetPassword);
+
+  // ==========================================
   // LOGIN
-  // ==============================
+  // ==========================================
   app.post("/login", auth.login);
 
-  // ==============================
+  // ==========================================
   // EMAIL VERIFICATION
-  // ==============================
+  // ==========================================
   app.get("/verify-email", auth.verifyEmail);
 
-  // ==============================
+  // ==========================================
   // CURRENT LOGGED-IN USER
-  // ==============================
+  // ==========================================
   app.get("/me", auth.me);
 
-  // ==============================
+  // ==========================================
   // COMPLETE CUSTOMER PROFILE
-  // ==============================
+  // ==========================================
   app.post("/complete-profile", auth.completeProfile);
 
-  // ==============================
+  // ==========================================
   // LOGOUT
-  // ==============================
+  // ==========================================
   app.post("/logout", auth.logout);
 
-  // ==============================
+  // ==========================================
   // START LISTENING
-  // ==============================
+  // ==========================================
   app.listen(PORT, () => {
     console.log(`Server running at http://localhost:${PORT}`);
   });

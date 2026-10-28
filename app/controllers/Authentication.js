@@ -2,7 +2,10 @@ const bcrypt = require("bcrypt");
 const crypto = require("crypto");
 
 const User = require("../models/User");
-const { sendVerificationEmail } = require("../config/email");
+const {
+  sendVerificationEmail,
+  sendPasswordResetEmail,
+} = require("../config/email");
 
 class Authentication {
   constructor(db) {
@@ -329,6 +332,101 @@ class Authentication {
 
       return res.status(500).json({
         message: "Login failed due to a server error.",
+      });
+    }
+  };
+
+
+  // ==========================================
+  // FORGOT PASSWORD
+  // POST /forgot-password
+  // Always returns a generic response to avoid revealing registered emails.
+  // ==========================================
+  forgotPassword = async (req, res) => {
+    const genericMessage =
+      "If an active account exists for that email, password-reset instructions will be sent shortly.";
+
+    try {
+      const email = String(req.body?.email || "").trim().toLowerCase();
+
+      if (!email || email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        return res.status(200).json({ message: genericMessage });
+      }
+
+      const user = await this.userModel.findByEmail(email);
+
+      // Only active accounts may reset passwords. Do not disclose account status.
+      if (!user || user.accountStatus !== "active") {
+        return res.status(200).json({ message: genericMessage });
+      }
+
+      const rawToken = crypto.randomBytes(32).toString("hex");
+      const tokenHash = crypto.createHash("sha256").update(rawToken).digest("hex");
+      const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
+
+      await this.userModel.savePasswordResetToken(user.id, tokenHash, expiresAt);
+
+      try {
+        await sendPasswordResetEmail(email, rawToken);
+      } catch (emailError) {
+        // Do not leave a valid token behind when the email could not be delivered.
+        await this.userModel.clearPasswordResetToken(user.id);
+        console.error("Password reset email failed:", emailError.message);
+      }
+
+      return res.status(200).json({ message: genericMessage });
+    } catch (error) {
+      console.error("Forgot password error:", error);
+      // Generic response also avoids exposing account existence on server errors.
+      return res.status(200).json({ message: genericMessage });
+    }
+  };
+
+  // ==========================================
+  // RESET PASSWORD
+  // POST /reset-password
+  // ==========================================
+  resetPassword = async (req, res) => {
+    try {
+      const rawToken = String(req.body?.token || "");
+      const password = req.body?.password;
+      const confirmPassword = req.body?.confirmPassword;
+
+      if (!/^[a-f0-9]{64}$/i.test(rawToken)) {
+        return res.status(400).json({
+          message: "This password-reset link is invalid or has expired. Please request a new one.",
+        });
+      }
+
+      if (typeof password !== "string" || typeof confirmPassword !== "string" ||
+          password.length < 8 || password.length > 72) {
+        return res.status(400).json({
+          message: "Password must be between 8 and 72 characters.",
+        });
+      }
+
+      if (password !== confirmPassword) {
+        return res.status(400).json({ message: "Passwords do not match." });
+      }
+
+      const tokenHash = crypto.createHash("sha256").update(rawToken).digest("hex");
+      const hashedPassword = await bcrypt.hash(password, 12);
+      const changed = await this.userModel.resetPasswordWithToken(tokenHash, hashedPassword);
+
+      if (!changed) {
+        return res.status(400).json({
+          message: "This password-reset link is invalid or has expired. Please request a new one.",
+        });
+      }
+
+      return res.status(200).json({
+        message: "Your password has been reset successfully. You can now log in.",
+        redirect: "/SoftEcoms/public/login.php",
+      });
+    } catch (error) {
+      console.error("Reset password error:", error);
+      return res.status(500).json({
+        message: "Could not reset your password. Please try again.",
       });
     }
   };
