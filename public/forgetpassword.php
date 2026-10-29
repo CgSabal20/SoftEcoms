@@ -1,58 +1,209 @@
+
 <?php
-session_start();
-
-$pageClass = "register-page";
-
-include(__DIR__ . '/includes/header.php');
-include(__DIR__ . '/includes/topbar.php');
+// public/forgetpassword.php
 ?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forgot Password | Sweet!</title>
 
-<section class="login d-flex align-items-center" style="height: 90vh;">
-    <div class="container">
-        <div class="row">
-            <div class="col-lg-5 m-auto">
-                
-               
-                <form id="forgetpasswordForm" autocomplete="on" class="bg-white p-5 rounded-4 shadow text-center">
-                    
-                    
-                    <h3 class="mb-4 fw-bold">Forgot Password?</h3>
-                    <p>Please enter the email address you'd like your password reset information sent to</p>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-                    <input
-                        type="email"
-                        class="form-control mb-3 py-2"
-                        placeholder="Enter Email"
-                        name="email"
-                        id="email"
-                        autocomplete="username"
-                        required
-                    >
+    <style>
+        * {
+            box-sizing: border-box;
+        }
 
-                  
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: #fff8f0;
+            color: #333;
+        }
 
-                    <!-- Using Bootstrap classes for a green, fully rounded pill button -->
-                    <button
-                        type="submit"
-                        class="btn btn-success w-100 mb-3 rounded-pill py-2 fw-bold"
-                        id="loginButton"
-                        style="background-color: #00d254; border: none;"
-                    >
-                        Request Reset
-                    </button>
+        .reset-card {
+            width: 100%;
+            max-width: 430px;
+            padding: 35px;
+            background: #fff;
+            border-radius: 14px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.09);
+        }
 
-                    <p class="mb-0">
-                        
-                        <a href="login.php" class="text-decoration-none">Back to Login</a>
-                    </p>
-                </form>
+        h1 {
+            margin-top: 0;
+            margin-bottom: 12px;
+            color: #8b4513;
+            text-align: center;
+        }
 
-            </div>
-        </div>
-    </div>
-</section>
+        .description {
+            margin-bottom: 25px;
+            color: #666;
+            line-height: 1.6;
+            text-align: center;
+        }
 
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
 
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        input {
+            width: 100%;
+            padding: 13px;
+            margin-bottom: 18px;
+            border: 1px solid #ccc;
+            border-radius: 7px;
+            font-size: 16px;
+        }
 
-<script>
+        input:focus {
+            outline: 2px solid #d9a47e;
+            border-color: #8b4513;
+        }
+
+        button {
+            width: 100%;
+            padding: 13px;
+            border: none;
+            border-radius: 7px;
+            background: #8b4513;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #71370e;
+        }
+
+        button:disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+        }
+
+        .back-link {
+            display: block;
+            margin-top: 20px;
+            color: #8b4513;
+            text-align: center;
+            text-decoration: none;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+    <main class="reset-card">
+        <h1>Forgot Password?</h1>
+
+        <p class="description">
+            Enter the email address associated with your Sweet! account.
+            If your account is active, we will send you a password-reset link.
+        </p>
+
+        <form id="forgetpasswordForm">
+            <label for="email">Email Address</label>
+
+            <input
+                type="email"
+                id="email"
+                name="email"
+                placeholder="Enter your email address"
+                maxlength="254"
+                autocomplete="email"
+                required
+            >
+
+            <button type="submit" id="loginButton">
+                Send Reset Link
+            </button>
+        </form>
+
+        <a class="back-link" href="login.php">
+            Back to Login
+        </a>
+    </main>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const form = document.getElementById("forgetpasswordForm");
+            const emailInput = document.getElementById("email");
+            const button = document.getElementById("loginButton");
+
+            form.addEventListener("submit", async (event) => {
+                event.preventDefault();
+
+                const email = emailInput.value.trim();
+
+                if (!email) {
+                    await Swal.fire({
+                        title: "Email required",
+                        text: "Please enter your email address.",
+                        icon: "warning"
+                    });
+                    return;
+                }
+
+                const originalText = button.textContent;
+                button.disabled = true;
+                button.textContent = "Sending...";
+
+                try {
+                    const response = await fetch(
+                        "http://localhost:3000/forgot-password",
+                        {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json"
+                            },
+                            body: JSON.stringify({ email })
+                        }
+                    );
+
+                    const data = await response.json();
+
+                    if (!response.ok) {
+                        throw new Error(
+                            data.message || "Unable to process your request."
+                        );
+                    }
+
+                    await Swal.fire({
+                        title: "Request received",
+                        text: data.message,
+                        icon: "info",
+                        confirmButtonColor: "#8b4513"
+                    });
+                } catch (error) {
+                    console.error("Forgot-password error:", error);
+
+                    await Swal.fire({
+                        title: "Request failed",
+                        text: "Unable to contact the authentication server. Make sure Node.js is running on port 3000.",
+                        icon: "error",
+                        confirmButtonColor: "#8b4513"
+                    });
+                } finally {
+                    button.disabled = false;
+                    button.textContent = originalText;
+                }
+            });
+        });
+    </script>
+
+</body>
+</html>
