@@ -63,11 +63,7 @@ include(__DIR__ . '/includes/topbar.php');
                                     <div class="d-grid pt-1 mb-3 pb-1">
                                         <button
                                             id="loginButton"
-<<<<<<< HEAD
                                             class="btn login-btn mb-3"
-=======
-                                            class="btn btn-primary gradient-custom-3 mb-3"
->>>>>>> cg's--progress
                                             type="submit">
                                             Login
                                         </button>
