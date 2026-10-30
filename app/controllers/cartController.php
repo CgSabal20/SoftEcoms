@@ -1,8 +1,21 @@
-```php
 <?php
 session_start();
 
 require_once __DIR__ . "/../config/config.php";
+
+// Return JSON response
+function sendResponse($success, $message, $cartCount = 0, $status = 200) {
+    http_response_code($status);
+    header("Content-Type: application/json");
+
+    echo json_encode([
+        "success" => $success,
+        "message" => $message,
+        "cartCount" => $cartCount
+    ]);
+
+    exit();
+}
 
 // Check if Add to Cart button was clicked
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_to_cart'])) {
@@ -13,8 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_to_cart'])) {
 
     // Validate input
     if (empty($product_uuid) || $quantity === false || $quantity < 1) {
-        header("Location: ../../public/order.php");
-        exit();
+        sendResponse(false, "Invalid product information.", 0, 400);
     }
 
     // Get product from database
@@ -27,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_to_cart'])) {
     );
 
     if (!$stmt) {
-        exit("Database query failed.");
+        sendResponse(false, "Database query failed.", 0, 500);
     }
 
     mysqli_stmt_bind_param($stmt, "s", $product_uuid);
@@ -40,7 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_to_cart'])) {
 
     // Check if product exists
     if (!$product) {
-        exit("Product not found.");
+        sendResponse(false, "Product not found.", 0, 404);
     }
 
     // Create cart session if it does not exist
@@ -67,13 +79,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_to_cart'])) {
             'img'      => $product['img'],
             'quantity' => $quantity
         ];
-
     }
 
-    // Redirect to cart page
-    header("Location: ../../public/cart.php");
-    exit();
+    // Calculate total quantity in cart
+    $cartCount = 0;
 
+    foreach ($_SESSION['cart'] as $item) {
+        $cartCount += $item['quantity'];
+    }
+
+    // Send success response without redirecting
+    sendResponse(true, "Product added to cart!", $cartCount);
 }
 
 // If accessed directly, return to order page
@@ -81,4 +97,3 @@ header("Location: ../../public/order.php");
 exit();
 
 ?>
-```
