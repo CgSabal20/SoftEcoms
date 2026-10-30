@@ -1,4 +1,5 @@
-    <?php
+
+<?php
 session_start();
 
 $pageClass = "cart-page";
@@ -6,10 +7,38 @@ $pageClass = "cart-page";
 // REMOVE ITEM FROM CART
 if (isset($_GET['remove'])) {
 
-    $product_id = intval($_GET['remove']);
+    $product_id = filter_var($_GET['remove'], FILTER_VALIDATE_INT);
 
-    if (isset($_SESSION['cart'][$product_id])) {
+    if ($product_id !== false && isset($_SESSION['cart'][$product_id])) {
         unset($_SESSION['cart'][$product_id]);
+    }
+
+    header("Location: cart.php");
+    exit();
+}
+
+// UPDATE PRODUCT QUANTITY
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update'])) {
+
+    $product_id = filter_var(
+        $_POST['product_id'] ?? null,
+        FILTER_VALIDATE_INT
+    );
+
+    $quantity = filter_var(
+        $_POST['quantity'] ?? null,
+        FILTER_VALIDATE_INT
+    );
+
+    if (
+        $product_id !== false &&
+        $product_id > 0 &&
+        $quantity !== false &&
+        $quantity > 0 &&
+        isset($_SESSION['cart'][$product_id])
+    ) {
+
+        $_SESSION['cart'][$product_id]['quantity'] = $quantity;
     }
 
     header("Location: cart.php");
@@ -45,7 +74,13 @@ $cart = $_SESSION['cart'] ?? [];
 
                 <?php foreach ($cart as $id => $item) { ?>
 
-                    <div class="card mb-4 shadow-sm rounded-4">
+                    <div
+                        class="card cart-item-card mb-4 shadow-sm rounded-4"
+                        data-price="<?php echo (float) $item['price']; ?>"
+                        data-quantity="<?php echo (int) $item['quantity']; ?>"
+                        tabindex="0"
+                        aria-pressed="false"
+                    >
 
                         <div class="card-body">
 
@@ -55,9 +90,11 @@ $cart = $_SESSION['cart'] ?? [];
                                 <div class="col-md-3">
 
                                     <img
-                                        src="assets/product_img/<?php echo htmlspecialchars($item['img']); ?>"
+                                        src="assets/product_img/<?php echo htmlspecialchars(basename($item['img']), ENT_QUOTES, 'UTF-8'); ?>"
+                                        alt="<?php echo htmlspecialchars($item['name'], ENT_QUOTES, 'UTF-8'); ?>"
                                         class="img-fluid rounded-4"
-                                        style="height:120px; width:100%; object-fit:cover;">
+                                        style="height:120px; width:100%; object-fit:cover;"
+                                    >
 
                                 </div>
 
@@ -65,11 +102,11 @@ $cart = $_SESSION['cart'] ?? [];
                                 <div class="col-md-4">
 
                                     <h5>
-                                        <?php echo htmlspecialchars($item['name']); ?>
+                                        <?php echo htmlspecialchars($item['name'], ENT_QUOTES, 'UTF-8'); ?>
                                     </h5>
 
                                     <p class="text-muted mb-0">
-                                        ₱<?php echo number_format($item['price'], 2); ?>
+                                        ₱<?php echo number_format((float) $item['price'], 2); ?>
                                     </p>
 
                                 </div>
@@ -77,22 +114,32 @@ $cart = $_SESSION['cart'] ?? [];
                                 <!-- QUANTITY -->
                                 <div class="col-md-3">
 
-                                    <form action="update_cart.php" method="POST"
-                                          class="d-flex align-items-center gap-2">
+                                    <form method="POST"
+                                          action="cart.php"
+                                          class="d-flex align-items-center gap-2 quantity-form">
 
-                                        <input type="hidden" name="product_id"
-                                               value="<?php echo $id; ?>">
+                                        <input
+                                            type="hidden"
+                                            name="product_id"
+                                            value="<?php echo (int) $id; ?>"
+                                        >
 
-                                        <input type="number"
-                                               name="quantity"
-                                               value="<?php echo $item['quantity']; ?>"
-                                               min="1"
-                                               class="form-control"
-                                               style="width:75px;">
+                                        <input
+                                            type="number"
+                                            name="quantity"
+                                            value="<?php echo (int) $item['quantity']; ?>"
+                                            min="1"
+                                            step="1"
+                                            class="form-control quantity-input"
+                                            style="width:75px;"
+                                            required
+                                        >
 
-                                        <button type="submit"
-                                                name="update"
-                                                class="btn btn-outline-dark btn-sm">
+                                        <button
+                                            type="submit"
+                                            name="update"
+                                            class="btn btn-outline-dark btn-sm"
+                                        >
                                             Update
                                         </button>
 
@@ -103,16 +150,19 @@ $cart = $_SESSION['cart'] ?? [];
                                 <!-- SUBTOTAL AND REMOVE -->
                                 <div class="col-md-2 text-end">
 
-                                    <p class="fw-bold">
+                                    <p class="fw-bold product-subtotal">
                                         ₱<?php echo number_format(
-                                            $item['price'] * $item['quantity'], 2
+                                            (float) $item['price'] * (int) $item['quantity'],
+                                            2
                                         ); ?>
                                     </p>
 
-                                    <a href="#"
-                                       class="text-danger text-decoration-none"
-                                       data-bs-toggle="modal"
-                                       data-bs-target="#removeModal<?php echo $id; ?>">
+                                    <a
+                                        href="#"
+                                        class="text-danger text-decoration-none"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#removeModal<?php echo (int) $id; ?>"
+                                    >
                                         Remove
                                     </a>
 
@@ -124,12 +174,13 @@ $cart = $_SESSION['cart'] ?? [];
 
                     </div>
 
-
                     <!-- REMOVE CONFIRMATION MODAL -->
-                    <div class="modal fade"
-                         id="removeModal<?php echo $id; ?>"
-                         tabindex="-1"
-                         aria-hidden="true">
+                    <div
+                        class="modal fade"
+                        id="removeModal<?php echo (int) $id; ?>"
+                        tabindex="-1"
+                        aria-hidden="true"
+                    >
 
                         <div class="modal-dialog modal-dialog-centered">
 
@@ -143,29 +194,31 @@ $cart = $_SESSION['cart'] ?? [];
                                         </i>
                                     </div>
 
-                                    <h4 class="fw-bold">
-                                        Remove Item?
-                                    </h4>
+                                    <h4 class="fw-bold">Remove Item?</h4>
 
                                     <p class="text-muted">
                                         Are you sure you want to remove
                                         <strong>
-                                            <?php echo htmlspecialchars($item['name']); ?>
+                                            <?php echo htmlspecialchars($item['name'], ENT_QUOTES, 'UTF-8'); ?>
                                         </strong>
                                         from your cart?
                                     </p>
 
                                     <div class="d-flex justify-content-center gap-2 mt-4">
 
-                                        <button type="button"
-                                                class="btn btn-outline-secondary rounded-pill px-4"
-                                                data-bs-dismiss="modal">
+                                        <button
+                                            type="button"
+                                            class="btn btn-outline-secondary rounded-pill px-4"
+                                            data-bs-dismiss="modal"
+                                        >
                                             Cancel
                                         </button>
 
-                                        <a href="cart.php?remove=<?php echo $id; ?>"
-                                           class="btn rounded-pill px-4 text-white"
-                                           style="background:#704638;">
+                                        <a
+                                            href="cart.php?remove=<?php echo (int) $id; ?>"
+                                            class="btn rounded-pill px-4 text-white"
+                                            style="background:#704638;"
+                                        >
                                             Yes, Remove
                                         </a>
 
@@ -183,7 +236,6 @@ $cart = $_SESSION['cart'] ?? [];
 
             </div>
 
-
             <!-- ORDER SUMMARY -->
             <div class="col-lg-4">
 
@@ -191,38 +243,27 @@ $cart = $_SESSION['cart'] ?? [];
 
                     <h4 class="mb-4">Order Summary</h4>
 
-                    <?php
-                    $total = 0;
-
-                    foreach ($cart as $item) {
-                        $total += $item['price'] * $item['quantity'];
-                    }
-                    ?>
+                    <div class="d-flex justify-content-between mb-3">
+                        <span>Selected Items</span>
+                        <span id="selectedCount">0</span>
+                    </div>
 
                     <div class="d-flex justify-content-between mb-3">
-
                         <span>Subtotal</span>
-
-                        <span>
-                            ₱<?php echo number_format($total, 2); ?>
-                        </span>
-
+                        <span id="subtotal">₱0.00</span>
                     </div>
 
                     <hr>
 
                     <div class="d-flex justify-content-between mb-4">
-
                         <h5>Total</h5>
-
-                        <h5>
-                            ₱<?php echo number_format($total, 2); ?>
-                        </h5>
-
+                        <h5 id="total">₱0.00</h5>
                     </div>
 
                     <a href="checkout.php"
-                       class="btn btn-dark w-100 rounded-pill">
+                       class="btn btn-dark w-100 rounded-pill"
+                       id="checkoutButton"
+                       aria-disabled="true">
                         Proceed to Checkout
                     </a>
 
@@ -230,6 +271,10 @@ $cart = $_SESSION['cart'] ?? [];
                        class="btn btn-outline-dark w-100 rounded-pill mt-3">
                         Continue Shopping
                     </a>
+
+                    <small class="text-muted text-center mt-3">
+                        Select the products you want to purchase.
+                    </small>
 
                 </div>
 
@@ -241,5 +286,106 @@ $cart = $_SESSION['cart'] ?? [];
 
 </div>
 
-
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const cards = document.querySelectorAll(".cart-item-card");
+
+    const subtotalElement = document.getElementById("subtotal");
+    const totalElement = document.getElementById("total");
+    const selectedCountElement = document.getElementById("selectedCount");
+    const checkoutButton = document.getElementById("checkoutButton");
+
+    function updateSummary() {
+
+        let total = 0;
+        let selectedCount = 0;
+
+        cards.forEach(function (card) {
+
+            if (card.classList.contains("selected")) {
+
+                const price = parseFloat(card.dataset.price);
+                const quantity = parseInt(card.dataset.quantity, 10);
+
+                total += price * quantity;
+                selectedCount++;
+
+            }
+
+        });
+
+        subtotalElement.textContent = "₱" + total.toFixed(2);
+        totalElement.textContent = "₱" + total.toFixed(2);
+        selectedCountElement.textContent = selectedCount;
+
+        checkoutButton.style.pointerEvents =
+            selectedCount > 0 ? "auto" : "none";
+
+        checkoutButton.style.opacity =
+            selectedCount > 0 ? "1" : "0.5";
+
+        checkoutButton.setAttribute(
+            "aria-disabled",
+            selectedCount > 0 ? "false" : "true"
+        );
+    }
+
+    // SELECT PRODUCT CARD
+    cards.forEach(function (card) {
+
+        card.addEventListener("click", function (event) {
+
+            if (event.target.closest("button, a, input, form, select, textarea")) {
+                return;
+            }
+
+            card.classList.toggle("selected");
+
+            card.setAttribute(
+                "aria-pressed",
+                card.classList.contains("selected") ? "true" : "false"
+            );
+
+            updateSummary();
+        });
+
+        // Keyboard selection
+        card.addEventListener("keydown", function (event) {
+
+            if (event.target !== card) return;
+
+            if (event.key === "Enter" || event.key === " ") {
+
+                event.preventDefault();
+
+                card.classList.toggle("selected");
+
+                card.setAttribute(
+                    "aria-pressed",
+                    card.classList.contains("selected") ? "true" : "false"
+                );
+
+                updateSummary();
+            }
+
+        });
+
+    });
+
+    // PREVENT CHECKOUT IF NOTHING IS SELECTED
+    checkoutButton.addEventListener("click", function (event) {
+
+        if (checkoutButton.getAttribute("aria-disabled") === "true") {
+            event.preventDefault();
+            alert("Please select at least one product first.");
+        }
+
+    });
+
+    updateSummary();
+
+});
+</script>
