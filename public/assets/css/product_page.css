@@ -27,6 +27,11 @@
   box-shadow: 0 15px 45px rgba(0, 0, 0, 0.08);
 }
 
+.product-container{
+top: 60px;
+position: relative;
+}
+
 /* Product image */
 
 .product-page .product-image-panel {

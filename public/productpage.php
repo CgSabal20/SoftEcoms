@@ -177,7 +177,7 @@ include('includes/topbar.php');
 .cart-toast {
     position: fixed;
     z-index: 1000000;
-    top: 90px;
+    top: 120px;
     left: 50%;
     bottom: auto;
     transform: translate(-50%, -20px);
