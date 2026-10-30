@@ -9,13 +9,8 @@ include(__DIR__ . '/includes/topbar.php');
 ?>
 
 <section class="loginOverlay">
-<<<<<<< HEAD
     <div class="container py-5 ">
         <div class="row d-flex justify-content-center align-items-center ">
-=======
-    <div class="container py-5 h-100">
-        <div class="row d-flex justify-content-center align-items-center h-100">
->>>>>>> cg's--progress
             <div class="col-xl-10">
                 <div class="card rounded-3 text-black">
                     <div class="row g-0">
