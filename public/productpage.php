@@ -67,8 +67,8 @@ if (!$product) {
     exit("Product not found.");
 }
 
-include __DIR__ . "/admin/includes/header.php";
-include __DIR__ . "/admin/includes/topbar.php";
+include('includes/header.php');
+include('includes/topbar.php');
 ?>
 
 <main class="product-page">
@@ -285,10 +285,11 @@ document.addEventListener("DOMContentLoaded", function () {
             await animation;
 
             // Update cart count if a badge exists
-            const badge = document.getElementById("cartCount");
+           const badge = document.getElementById("cartCount");
 
             if (badge) {
                 badge.textContent = data.cartCount;
+                badge.style.display = data.cartCount > 0 ? "flex" : "none";
             }
 
             showMessage("✓ Added to your cart!");

@@ -1,5 +1,17 @@
 <?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 $current_page = basename($_SERVER['PHP_SELF']);
+
+$cartCount = 0;
+
+if (!empty($_SESSION['cart'])) {
+    foreach ($_SESSION['cart'] as $item) {
+        $cartCount += (int) $item['quantity'];
+    }
+}
 ?>
 
 <nav class="navbar navbar-expand-lg">
@@ -110,6 +122,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
 
                     <a href="/SoftEcoms/public/cart.php"
                         class="nav-icon"
+                        id="cartIcon"
                         aria-label="Shopping cart">
 
                         <svg xmlns="http://www.w3.org/2000/svg"
@@ -123,6 +136,13 @@ $current_page = basename($_SERVER['PHP_SELF']);
 
                             <path d="M5 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4m7 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4" />
                         </svg>
+
+                        <span id="cartCount"
+                            class="cart-count"
+                            style="<?php echo $cartCount === 0 ? 'display:none;' : ''; ?>">
+                            <?php echo $cartCount; ?>
+                        </span>
+
                     </a>
 
                 </div>
