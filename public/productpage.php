@@ -184,9 +184,4 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 </script>
 
-<<<<<<< HEAD
-=======
-
-
->>>>>>> 5dd842e4dfcf58cc2a111cd7b03e540892c63e33
 <?php include __DIR__ . "/admin/includes/footer.php"; ?>
