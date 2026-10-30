@@ -5,12 +5,12 @@
 /* mao ni panel*/
 .order-listing .order-panel {
   width: 100%;
-  max-width: 1200px;   
-  margin: 0 auto;      
-  background: #fff;    
+  max-width: 1400px;
+  margin: 0 auto;
+  background: #fff;
   border-radius: 8px;
   padding: 24px;
-}
+} 
 
 .order-listing .order-title {
   text-align: center;
@@ -48,8 +48,8 @@
 
 .order-listing .order-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 24px;
 }
 
 .order-listing .order-card {
@@ -64,7 +64,7 @@
 
 .order-listing .order-card img {
   width: 100%;
-  aspect-ratio: 1 / 1;   /* every image is a square, so rows line up */
+  aspect-ratio: 1 / 1;
   object-fit: cover;
   border-radius: 6px;
   transition: transform 0.3s ease;
