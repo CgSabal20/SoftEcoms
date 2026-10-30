@@ -16,6 +16,7 @@ modified some of the topbar, and added some links to header for new css, oh also
 27/10/2026 Roque
 Added functionalities sa login and register
 changed flow sa registration
+<<<<<<< HEAD
 
 
 
@@ -51,3 +52,5 @@ added product_page.css
 
 
 
+=======
+>>>>>>> cg's--progress

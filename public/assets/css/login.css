@@ -10,8 +10,22 @@ background: linear-gradient(to right, #ee7724, #d8363a, #dd3675, #b44593);
 }
 
 
+<<<<<<< HEAD
 /* this custom 3 and this is what I use in the login button! */
 
+=======
+/* this custom 3 is what I use in the login button! */
+.loginOverlay .gradient-custom-3 {
+  /* Fallback for old browsers */
+  background: #FCB09D;
+
+  /* Chrome 10-25, Safari 5.1-6 */
+  background: -webkit-linear-gradient(to top, #ED8282 0%, #FCB09D 31%, #FCB88D 58%, #FCB88D 81%);
+
+  /* Modern standard browsers */
+  background: linear-gradient(to top, #ED8282 0%, #FCB09D 31%, #FCB88D 58%, #FCB88D 81%);
+}
+>>>>>>> cg's--progress
 
 .loginOverlay .gradient-custom-3 {
   /* Fallback for old browsers */
@@ -25,6 +39,7 @@ background: linear-gradient(to right, #ee7724, #d8363a, #dd3675, #b44593);
 }
 
 
+<<<<<<< HEAD
 /*new button approach */
 .loginOverlay .login-btn {
   color: #fff;
@@ -46,6 +61,8 @@ background: linear-gradient(to right, #ee7724, #d8363a, #dd3675, #b44593);
 }
 
 
+=======
+>>>>>>> cg's--progress
 @media (min-width: 768px) {
 .loginOverlay .gradient-form {
 height: 100vh !important;

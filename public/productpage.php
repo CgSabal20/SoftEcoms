@@ -67,8 +67,13 @@ if (!$product) {
     exit("Product not found.");
 }
 
+<<<<<<< HEAD
 include('includes/header.php');
 include('includes/topbar.php');
+=======
+include __DIR__ . "/admin/includes/header.php";
+include __DIR__ . "/admin/includes/topbar.php";
+>>>>>>> cg's--progress
 ?>
 
 <main class="product-page">
@@ -146,6 +151,7 @@ include('includes/topbar.php');
         </section>
     </div>
 </main>
+<<<<<<< HEAD
 
 
 <style>
@@ -395,3 +401,44 @@ document.addEventListener("DOMContentLoaded", function () {
 
 });
 </script>
+=======
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const quantityInput = document.getElementById("quantity_input");
+    const decreaseButton = document.getElementById("decreaseQuantity");
+    const increaseButton = document.getElementById("increaseQuantity");
+    const cartForm = document.getElementById("cartForm");
+
+    decreaseButton.addEventListener("click", function () {
+        const quantity = parseInt(quantityInput.value, 10) || 1;
+        quantityInput.value = Math.max(1, quantity - 1);
+    });
+
+    increaseButton.addEventListener("click", function () {
+        const quantity = parseInt(quantityInput.value, 10) || 1;
+        quantityInput.value = quantity + 1;
+    });
+
+    quantityInput.addEventListener("change", function () {
+        const quantity = parseInt(quantityInput.value, 10);
+
+        if (!Number.isInteger(quantity) || quantity < 1) {
+            quantityInput.value = 1;
+        }
+    });
+
+    cartForm.addEventListener("submit", function (event) {
+        const quantity = Number(quantityInput.value);
+
+        if (!Number.isInteger(quantity) || quantity < 1) {
+            event.preventDefault();
+            quantityInput.value = 1;
+            quantityInput.focus();
+        }
+    });
+});
+</script>
+
+<?php include __DIR__ . "/admin/includes/footer.php"; ?>
+>>>>>>> cg's--progress

@@ -227,6 +227,46 @@
 
   .product-page .image-wrapper {
     min-height: 300px;
+<<<<<<< HEAD
+=======
+  }
+}
+
+/* Mobile */
+
+@media (max-width: 650px) {
+  .product-page {
+    padding: 20px 12px 40px;
+  }
+
+  .product-page .product-container {
+    grid-template-columns: minmax(0, 1fr);
+    border-radius: 18px;
+  }
+
+  .product-page .product-image-panel {
+    padding: 22px;
+  }
+
+  .product-page .image-wrapper {
+    min-height: 220px;
+  }
+
+  .product-page .image-wrapper img {
+    max-height: 340px;
+  }
+
+  .product-page .product-details {
+    padding: 28px 22px;
+  }
+
+  .product-page .product-title {
+    font-size: 1.7rem;
+  }
+
+  .product-page .price {
+    font-size: 1.65rem;
+>>>>>>> cg's--progress
   }
 }
 

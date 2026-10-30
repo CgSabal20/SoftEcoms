@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <?php
 session_start();
 
@@ -63,6 +64,160 @@ include('includes/topbar.php');
         </div>
     </div>
 </section>
+=======
+
+<?php
+// public/verifyforgetpassword.php
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reset Password | Sweet!</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: #fff8f0;
+            color: #333;
+        }
+
+        .reset-card {
+            width: 100%;
+            max-width: 430px;
+            padding: 35px;
+            background: #fff;
+            border-radius: 14px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.09);
+        }
+
+        h1 {
+            margin-top: 0;
+            margin-bottom: 12px;
+            color: #8b4513;
+            text-align: center;
+        }
+
+        .description {
+            margin-bottom: 25px;
+            color: #666;
+            line-height: 1.6;
+            text-align: center;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        input {
+            width: 100%;
+            padding: 13px;
+            margin-bottom: 18px;
+            border: 1px solid #ccc;
+            border-radius: 7px;
+            font-size: 16px;
+        }
+
+        input:focus {
+            outline: 2px solid #d9a47e;
+            border-color: #8b4513;
+        }
+
+        button {
+            width: 100%;
+            padding: 13px;
+            border: none;
+            border-radius: 7px;
+            background: #8b4513;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #71370e;
+        }
+
+        button:disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+        }
+
+        .back-link {
+            display: block;
+            margin-top: 20px;
+            color: #8b4513;
+            text-align: center;
+            text-decoration: none;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+    <main class="reset-card">
+        <h1>Reset Your Password</h1>
+
+        <p class="description">
+            Choose a new password for your Sweet! account.
+        </p>
+
+        <form id="resetPasswordForm">
+            <label for="password">New Password</label>
+
+            <input
+                type="password"
+                id="password"
+                name="password"
+                placeholder="Enter your new password"
+                minlength="8"
+                maxlength="72"
+                autocomplete="new-password"
+                required
+            >
+
+            <label for="confirmPassword">Confirm New Password</label>
+
+            <input
+                type="password"
+                id="confirmPassword"
+                name="confirmPassword"
+                placeholder="Confirm your new password"
+                minlength="8"
+                maxlength="72"
+                autocomplete="new-password"
+                required
+            >
+
+            <button type="submit" id="resetPasswordButton">
+                Reset Password
+            </button>
+        </form>
+
+        <a class="back-link" href="login.php">
+            Back to Login
+        </a>
+    </main>
+>>>>>>> cg's--progress
 
     <script>
         document.addEventListener("DOMContentLoaded", () => {
