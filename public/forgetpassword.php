@@ -117,9 +117,3 @@ include('includes/topbar.php');
         });
     </script>
 
-<<<<<<< HEAD
-
-=======
-</body>
-</html>
->>>>>>> cg's--progress
