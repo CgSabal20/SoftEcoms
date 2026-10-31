@@ -4,6 +4,12 @@ session_start();
 
 $pageClass = "index-page";
 
+$loginNotice = "";
+
+if (isset($_GET['notice']) && $_GET['notice'] === 'login_required') {
+    $loginNotice = "Please log in to your account before adding products to your cart.";
+}
+
 include(__DIR__ . '/includes/header.php');
 include(__DIR__ . '/includes/topbar.php');
 ?>
@@ -106,6 +112,25 @@ include(__DIR__ . '/includes/topbar.php');
 </section>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    <?php if (!empty($loginNotice)): ?>
+
+        Swal.fire({
+            icon: "info",
+            title: "Login Required",
+            text: <?php echo json_encode($loginNotice); ?>,
+            confirmButtonText: "Okay",
+            confirmButtonColor: "#F56C6C"
+        });
+
+    <?php endif; ?>
+
+});
+</script>
+
 
 <script>
 const loginForm = document.getElementById("loginForm");

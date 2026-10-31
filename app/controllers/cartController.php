@@ -1,7 +1,22 @@
+
 <?php
 session_start();
 
 require_once __DIR__ . "/../config/config.php";
+
+// Check if customer is logged in GUEST kibali
+if (!isset($_SESSION['user_id']) || empty($_SESSION['user_id'])) {
+
+    header("Content-Type: application/json");
+
+    echo json_encode([
+        "success" => false,
+        "message" => "Please log in to add products to your cart.",
+        "redirect" => "/SoftEcoms/public/login.php?notice=login_required"
+    ]);
+
+    exit();
+}
 
 // Return JSON response
 function sendResponse($success, $message, $cartCount = 0, $status = 200) {
@@ -20,7 +35,6 @@ function sendResponse($success, $message, $cartCount = 0, $status = 200) {
 // Check if Add to Cart button was clicked
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_to_cart'])) {
 
-    // Get submitted product information
     $product_uuid = trim($_POST['product_uuid'] ?? '');
     $quantity = filter_var($_POST['quantity'] ?? 1, FILTER_VALIDATE_INT);
 
@@ -50,7 +64,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_to_cart'])) {
 
     mysqli_stmt_close($stmt);
 
-    // Check if product exists
     if (!$product) {
         sendResponse(false, "Product not found.", 0, 404);
     }
@@ -62,15 +75,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_to_cart'])) {
 
     $product_id = $product['id'];
 
-    // Check if product is already in cart
+    // Check if product already exists in cart
     if (isset($_SESSION['cart'][$product_id])) {
 
-        // Add to existing quantity
         $_SESSION['cart'][$product_id]['quantity'] += $quantity;
 
     } else {
 
-        // Add new product to cart
         $_SESSION['cart'][$product_id] = [
             'id'       => $product['id'],
             'uuid'     => $product['uuid'],
@@ -81,19 +92,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_to_cart'])) {
         ];
     }
 
-    // Calculate total quantity in cart
+    // Calculate cart quantity
     $cartCount = 0;
 
     foreach ($_SESSION['cart'] as $item) {
         $cartCount += $item['quantity'];
     }
 
-    // Send success response without redirecting
     sendResponse(true, "Product added to cart!", $cartCount);
 }
 
-// If accessed directly, return to order page
+// If accessed directly
 header("Location: ../../public/order.php");
 exit();
-
 ?>

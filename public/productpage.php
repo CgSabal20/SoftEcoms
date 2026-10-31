@@ -237,7 +237,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
-    // Add product without leaving the page
+    // Add product to cart
     form.addEventListener("submit", async function (event) {
 
         event.preventDefault();
@@ -259,10 +259,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
         try {
 
-            // Start animation immediately
+            // Start flying product animation
             const animation = animateProductToCart();
 
-            // Send product to PHP
             const formData = new FormData(form);
             formData.append("add_to_cart", "1");
 
@@ -278,14 +277,20 @@ document.addEventListener("DOMContentLoaded", function () {
 
             const data = await response.json();
 
+            // If user is not logged in, redirect to login
+            if (data.redirect) {
+                window.location.href = data.redirect;
+                return;
+            }
+
             if (!response.ok || !data.success) {
                 throw new Error(data.message || "Unable to add product.");
             }
 
             await animation;
 
-            // Update cart count if a badge exists
-           const badge = document.getElementById("cartCount");
+            // Update cart count
+            const badge = document.getElementById("cartCount");
 
             if (badge) {
                 badge.textContent = data.cartCount;
@@ -293,6 +298,11 @@ document.addEventListener("DOMContentLoaded", function () {
             }
 
             showMessage("✓ Added to your cart!");
+
+            // Automatically open cart page
+            setTimeout(function () {
+                window.location.href = "/SoftEcoms/public/cart.php";
+            }, 700);
 
         } catch (error) {
 
@@ -302,6 +312,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             addButton.disabled = false;
             addButton.innerHTML = originalText;
+
         }
     });
 
