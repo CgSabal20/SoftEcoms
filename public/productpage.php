@@ -72,7 +72,7 @@ include('includes/topbar.php');
 ?>
 
 <main class="product-page">
-    <div class="product-container">
+    <div class="product-container" style="margin-top: 60px;">
 
         <section class="product-image-panel">
             <div class="image-wrapper">
@@ -173,11 +173,11 @@ include('includes/topbar.php');
     60% { transform: scale(0.9) rotate(8deg); }
 }
 
-/* Success notification */
+/* SUCCESS NOTIFICATION */
 .cart-toast {
     position: fixed;
     z-index: 1000000;
-    top: 120px;
+    top: 160px;
     left: 50%;
     bottom: auto;
     transform: translate(-50%, -20px);
