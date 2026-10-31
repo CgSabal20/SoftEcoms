@@ -57,7 +57,7 @@ $cart = $_SESSION['cart'] ?? [];
 
     <?php if (empty($cart)) { ?>
 
-        <div class="text-center py-5">
+        <div class="text-center py-5" style="margin-top: 210px;">
             <h4>Your cart is empty!</h4>
             <p>Looks like you haven't added any pastries yet.</p>
 
