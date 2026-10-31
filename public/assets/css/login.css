@@ -71,3 +71,8 @@ border-bottom-right-radius: .3rem;
   object-fit: cover;
   border-radius: 0 .3rem .3rem 0;
 }
+
+/* Move only the login card down */
+.loginOverlay .card {
+    margin-top: 70px;
+}
