@@ -176,50 +176,63 @@ $cart = $_SESSION['cart'] ?? [];
 
                     <!-- REMOVE CONFIRMATION MODAL -->
                     <div
-                        class="modal fade"
+                        class="modal fade remove-modal"
                         id="removeModal<?php echo (int) $id; ?>"
                         tabindex="-1"
                         aria-hidden="true"
                     >
-
                         <div class="modal-dialog modal-dialog-centered">
 
-                            <div class="modal-content rounded-4 border-0">
+                            <div class="modal-content">
 
-                                <div class="modal-body text-center p-4">
+                                <div class="modal-body text-center">
 
-                                    <div class="mb-3">
-                                        <i class="fas fa-trash-alt"
-                                           style="font-size:40px; color:#B65D50;">
-                                        </i>
+                                    <!-- Decorative corner -->
+                                    <div class="modal-decoration top-decoration"></div>
+                                    <div class="modal-decoration bottom-decoration"></div>
+
+                                    <!-- Trash Icon -->
+                                    <div class="remove-icon">
+                                        <i class="fas fa-trash-alt"></i>
                                     </div>
 
-                                    <h4 class="fw-bold">Remove Item?</h4>
+                                    <!-- Heart -->
+                                    <div class="remove-heart">
+                                        <i class="fas fa-heart"></i>
+                                    </div>
 
-                                    <p class="text-muted">
+                                    <!-- Title -->
+                                    <h4 class="remove-title">Remove Item?</h4>
+
+                                    <!-- Message -->
+                                    <p class="remove-message">
                                         Are you sure you want to remove
                                         <strong>
-                                            <?php echo htmlspecialchars($item['name'], ENT_QUOTES, 'UTF-8'); ?>
+                                            <?php echo htmlspecialchars(
+                                                $item['name'],
+                                                ENT_QUOTES,
+                                                'UTF-8'
+                                            ); ?>
                                         </strong>
                                         from your cart?
                                     </p>
 
-                                    <div class="d-flex justify-content-center gap-2 mt-4">
+                                    <!-- Buttons -->
+                                    <div class="remove-actions">
 
                                         <button
                                             type="button"
-                                            class="btn btn-outline-secondary rounded-pill px-4"
+                                            class="btn keep-item-btn"
                                             data-bs-dismiss="modal"
                                         >
-                                            Cancel
+                                            Keep Item
                                         </button>
 
                                         <a
                                             href="cart.php?remove=<?php echo (int) $id; ?>"
-                                            class="btn rounded-pill px-4 text-white"
-                                            style="background:#704638;"
+                                            class="btn confirm-remove-btn"
                                         >
-                                            Yes, Remove
+                                            Remove
                                         </a>
 
                                     </div>
@@ -229,7 +242,6 @@ $cart = $_SESSION['cart'] ?? [];
                             </div>
 
                         </div>
-
                     </div>
 
                 <?php } ?>

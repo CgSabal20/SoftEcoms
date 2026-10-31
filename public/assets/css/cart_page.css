@@ -133,3 +133,125 @@
 .cart-page #checkoutButton[aria-disabled="true"] {
     cursor: not-allowed;
 }
+
+/* REMOVE ITEM */
+
+.remove-modal .modal-content {
+    background: #FFFFFF;
+    border: none;
+    border-radius: 18px;
+    box-shadow: 0 4px 15px rgba(245, 108, 108, 0.12);
+}
+
+.remove-modal .modal-body {
+    padding: 30px;
+    font-family: 'Rubik', sans-serif;
+}
+
+/* Trash Icon */
+.remove-modal .remove-icon {
+    width: 60px;
+    height: 60px;
+    margin: 0 auto 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #FFF5F2;
+    color: #F56C6C;
+    font-size: 24px;
+}
+
+/* Hide Heart */
+.remove-modal .remove-heart {
+    display: none;
+}
+
+.remove-modal .remove-title {
+    color: #D85C5C !important;
+    font-family: 'Rubik', sans-serif !important;
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 12px;
+}
+
+/* Message */
+.remove-modal .remove-message {
+    color: #8A7770 !important;
+    font-family: 'Rubik', sans-serif;
+    font-size: 14px;
+    line-height: 1.7;
+    margin-bottom: 25px;
+}
+
+.remove-modal .remove-message strong {
+    color: #704638 !important;
+    font-weight: 700;
+}
+
+/* Buttons */
+.remove-modal .remove-actions {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+}
+
+/* Keep Item Button */
+.remove-modal .keep-item-btn {
+    min-width: 140px;
+    padding: 11px 20px;
+    border-radius: 30px;
+    background: #FFFFFF;
+    border: 1px solid #F56C6C;
+    color: #D85C5C;
+    font-family: 'Rubik', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    transition: 0.2s ease;
+}
+
+.remove-modal .keep-item-btn:hover {
+    background: #FFF5F2;
+    color: #D85C5C;
+}
+
+/* Remove Button */
+.remove-modal .confirm-remove-btn {
+    min-width: 140px;
+    padding: 11px 20px;
+    border-radius: 30px;
+    background: linear-gradient(
+        to right,
+        #F56C6C,
+        #FF9B4F,
+        #FFA1A1
+    );
+    border: none;
+    color: #FFFFFF !important;
+    font-family: 'Rubik', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    transition: 0.2s ease;
+}
+
+.remove-modal .confirm-remove-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(245, 108, 108, 0.25);
+    color: #FFFFFF !important;
+}
+
+/* Mobile Responsive */
+@media (max-width: 576px) {
+    .remove-modal .modal-body {
+        padding: 25px 20px;
+    }
+
+    .remove-modal .remove-actions {
+        flex-direction: column;
+    }
+
+    .remove-modal .keep-item-btn,
+    .remove-modal .confirm-remove-btn {
+        width: 100%;
+    }
+}
