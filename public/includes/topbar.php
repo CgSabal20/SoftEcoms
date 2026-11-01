@@ -3,7 +3,8 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-$current_page = basename($_SERVER['PHP_SELF']);
+$current_page = basename(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH));
+$isCartPage = ($current_page === 'cart.php');
 
 $cartCount = 0;
 
@@ -50,38 +51,39 @@ if (!empty($_SESSION['cart'])) {
                 <ul class="navbar-nav ms-lg-auto my-2 my-lg-0">
 
                     <li class="nav-item">
-                        <a class="nav-link active"
+                        <a class="nav-link <?= (!$isCartPage && $current_page === 'index.php') ? 'active' : '' ?>"
                             href="/SoftEcoms/public/index.php">
                             Home
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="nav-link"
+                        <a class="nav-link <?= in_array($current_page, ['productpage.php', 'product.php']) ? 'active' : '' ?>"
                             href="/SoftEcoms/public/productpage.php">
                             Menu
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="nav-link"
+                        <a class="nav-link <?= $current_page === 'contactUs.php' ? 'active' : '' ?>"
                             href="/SoftEcoms/public/contactUs.php">
                             Contact Us
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="nav-link"
+                        <a class="nav-link <?= $current_page === 'order.php' ? 'active' : '' ?>"
                             href="/SoftEcoms/public/order.php">
                             Order
                         </a>
                     </li>
 
                     <li class="nav-item">
-                        <a class="nav-link"
+                        <a class="nav-link <?= $current_page === 'aboutUs.php' ? 'active' : '' ?>"
                             href="/SoftEcoms/public/aboutUs.php">
                             About
                         </a>
+                        
                     </li>
 
                 </ul>
@@ -121,9 +123,9 @@ if (!empty($_SESSION['cart'])) {
 
 
                     <a href="/SoftEcoms/public/cart.php"
-                        class="nav-icon"
-                        id="cartIcon"
-                        aria-label="Shopping cart">
+                    class="nav-icon <?= $isCartPage ? 'active' : '' ?>"
+                    id="cartIcon"
+                    aria-label="Shopping cart">
 
                         <svg xmlns="http://www.w3.org/2000/svg"
                             width="22"
