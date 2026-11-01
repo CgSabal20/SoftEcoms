@@ -1,8 +1,3 @@
-
-/* =====================================
-   SWEETCLAIRE CART PAGE
-===================================== */
-
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Poppins:wght@400;500;600;700&display=swap');
 
 .cart-page {
@@ -15,12 +10,11 @@
 
 /* CART TITLE */
 
-.cart-page h2 {
+.cart-page h1 {
+    font-family: Georgia, serif;
+    font-size: clamp(32px, 5vw, 45px);
     color: #D85C5C;
-    font-family: 'Playfair Display', serif;
-    font-size: 36px;
-    font-weight: 700;
-    letter-spacing: 0.3px;
+    margin: 12px 0;
 }
 
 /* CART ITEM CARD */
@@ -93,7 +87,7 @@
 
 .cart-page .col-lg-4 h4 {
     color: #D85C5C;
-    font-family: 'Playfair Display', serif;
+    font-family: Georgia, serif;
     font-size: 25px;
     font-weight: 700;
 }
@@ -219,9 +213,6 @@
     opacity: 0.55;
 }
 
-/* =====================================
-   REMOVE ITEM MODAL
-===================================== */
 
 .remove-modal .modal-content {
     background: #FFFFFF;
@@ -272,7 +263,7 @@
 
 .remove-modal .remove-message {
     color: #8A7770 !important;
-    font-family: 'Poppins', sans-serif;
+    font-family: Georgia, serif;
     font-size: 13px;
     line-height: 1.8;
     margin-bottom: 27px;

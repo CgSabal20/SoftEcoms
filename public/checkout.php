@@ -30,7 +30,6 @@ include('./admin/includes/topbar.php');
 
     <!-- PAGE HEADER -->
     <div class="checkout-heading">
-        <span class="checkout-eyebrow">SWEETCLAIRE ONLINE STORE</span>
         <h1>Complete Your Order</h1>
         <p>Just a few more details before your sweet treats are yours.</p>
 
