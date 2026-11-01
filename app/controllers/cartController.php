@@ -4,9 +4,21 @@ session_start();
 
 require_once __DIR__ . "/../config/config.php";
 
-// Check if customer is logged in GUEST kibali
-if (!isset($_SESSION['user_id']) || empty($_SESSION['user_id'])) {
 
+// ==========================================
+// VERIFY LOGIN USING NODE.JS EXPRESS SESSION
+// ==========================================
+
+// Get the Express session cookie from the browser request.
+$expressCookie = null;
+$cookieHeader = $_SERVER['HTTP_COOKIE'] ?? '';
+
+if (preg_match('/(?:^|;\s*)connect\.sid=([^;]*)/', $cookieHeader, $matches)) {
+    $expressCookie = 'connect.sid=' . $matches[1];
+}
+
+// If there is no Express session cookie, the user is not logged in.
+if (!$expressCookie || !function_exists('curl_init')) {
     header("Content-Type: application/json");
 
     echo json_encode([
@@ -17,6 +29,60 @@ if (!isset($_SESSION['user_id']) || empty($_SESSION['user_id'])) {
 
     exit();
 }
+
+// Ask Node.js to verify the session.
+// The /me route checks the actual Express session on the server.
+$ch = curl_init("http://localhost:3000/me");
+
+curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_HTTPHEADER => [
+        "Cookie: " . $expressCookie,
+        "Accept: application/json"
+    ],
+    CURLOPT_CONNECTTIMEOUT => 3,
+    CURLOPT_TIMEOUT => 5
+]);
+
+$nodeResponse = curl_exec($ch);
+$nodeStatus = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
+curl_close($ch);
+
+// Decode the verified user information.
+$authData = json_decode($nodeResponse ?: '', true);
+
+$authenticatedUser = $authData['user'] ?? null;
+$verifiedUserId = $authenticatedUser['user_id'] ?? null;
+
+// Reject the request if Node.js did not confirm the login.
+if (
+    $nodeStatus !== 200 ||
+    !is_array($authenticatedUser) ||
+    empty($verifiedUserId)
+) {
+    header("Content-Type: application/json");
+
+    echo json_encode([
+        "success" => false,
+        "message" => "Please log in to add products to your cart.",
+        "redirect" => "/SoftEcoms/public/login.php?notice=login_required"
+    ]);
+
+    exit();
+}
+
+// Node.js confirmed the logged-in user.
+// Synchronize the verified identity with the PHP session.
+$_SESSION['user_id'] = $verifiedUserId;
+$_SESSION['uuid'] = $authenticatedUser['uuid'] ?? null;
+$_SESSION['userRole'] = $authenticatedUser['role'] ?? null;
+$_SESSION['authUser'] = $authenticatedUser;
+
+// Save the PHP session before continuing.
+session_write_close();
+session_start();
+
 
 // Return JSON response
 function sendResponse($success, $message, $cartCount = 0, $status = 200) {
