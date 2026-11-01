@@ -47,7 +47,6 @@ include(__DIR__ . '/includes/topbar.php');
                                             type="email"
                                             id="email"
                                             class="form-control"
-                                            placeholder="Email Address"
                                             autocomplete="email"
                                             required>
                                     </div>
@@ -61,7 +60,6 @@ include(__DIR__ . '/includes/topbar.php');
                                             type="password"
                                             id="password"
                                             class="form-control"
-                                            placeholder="Password"
                                             autocomplete="current-password"
                                             required>
                                     </div>
