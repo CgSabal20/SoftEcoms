@@ -112,7 +112,7 @@ if (!empty($_SESSION['cart'])) {
 
 
                     <!-- Account dropdown: populated by Node.js -->
-                    <div id="accountNav">
+                    <div id="accountNav" style="visibility: hidden;">
                         <a class="nav-link"
                             href="/SoftEcoms/public/login.php"
                             style="background-color: black; color: #F1D0C9; padding: 8px 20px;  
@@ -156,96 +156,129 @@ if (!empty($_SESSION['cart'])) {
 </nav>
 
 <script>
-    document.addEventListener("DOMContentLoaded", async function() {
-        const accountNav = document.getElementById("accountNav");
+document.addEventListener("DOMContentLoaded", async function () {
 
-        if (!accountNav) return;
+    const accountNav = document.getElementById("accountNav");
 
-        try {
-            const response = await fetch("http://localhost:3000/me", {
-                method: "GET",
-                credentials: "include"
-            });
+    if (!accountNav) return;
 
-            if (response.status === 401) {
-                return; // Keep Sign In visible for guests.
-            }
+    function showAccountNav() {
+        accountNav.style.visibility = "visible";
+    }
 
-            if (!response.ok) {
-                throw new Error("Unable to retrieve account information.");
-            }
+    try {
 
-            const data = await response.json();
-            const user = data.user;
+        const response = await fetch("http://localhost:3000/me", {
+            method: "GET",
+            credentials: "include",
+            cache: "no-store"
+        });
 
-            if (!user) return;
-
-            // Create the dropdown without inserting user data as HTML.
-            const wrapper = document.createElement("div");
-            wrapper.className = "nav-item dropdown";
-
-            const toggle = document.createElement("a");
-            toggle.className = "nav-link dropdown-toggle";
-            toggle.href = "#";
-            toggle.setAttribute("role", "button");
-            toggle.setAttribute("data-bs-toggle", "dropdown");
-            toggle.setAttribute("aria-expanded", "false");
-            toggle.textContent = user.username || user.fullName || "My Account";
-
-            const menu = document.createElement("ul");
-            menu.className = "dropdown-menu dropdown-menu-end";
-
-            const profileItem = document.createElement("li");
-            const profileLink = document.createElement("a");
-            profileLink.className = "dropdown-item";
-            profileLink.href = "/SoftEcoms/public/users/profilePage.php";
-            profileLink.textContent = "Profile";
-            profileItem.appendChild(profileLink);
-
-            const dividerItem = document.createElement("li");
-            const divider = document.createElement("hr");
-            divider.className = "dropdown-divider";
-            dividerItem.appendChild(divider);
-
-            const logoutItem = document.createElement("li");
-            const logoutButton = document.createElement("button");
-            logoutButton.type = "button";
-            logoutButton.className = "dropdown-item";
-            logoutButton.textContent = "Sign Out";
-
-            logoutButton.addEventListener("click", async function() {
-                logoutButton.disabled = true;
-
-                try {
-                    const logoutResponse = await fetch(
-                        "http://localhost:3000/logout", {
-                            method: "POST",
-                            credentials: "include"
-                        }
-                    );
-
-                    if (!logoutResponse.ok) {
-                        throw new Error("Logout failed.");
-                    }
-
-                    window.location.href = "/SoftEcoms/public/login.php";
-
-                } catch (error) {
-                    console.error("Sign out error:", error);
-                    alert("Could not sign out. Check whether the Node.js server is running.");
-                    logoutButton.disabled = false;
-                }
-            });
-
-            logoutItem.appendChild(logoutButton);
-
-            menu.append(profileItem, dividerItem, logoutItem);
-            wrapper.append(toggle, menu);
-            accountNav.replaceChildren(wrapper);
-
-        } catch (error) {
-            console.error("Account navbar error:", error);
-            // Leave Sign In visible if the API is unavailable.
+        // Guest user: display Login button
+        if (response.status === 100) {
+            showAccountNav();
+            return;
         }
-    });
+
+        if (!response.ok) {
+            throw new Error("Unable to retrieve account information.");
+        }
+
+        const data = await response.json();
+        const user = data.user;
+
+        if (!user) {
+            showAccountNav();
+            return;
+        }
+
+        // Account dropdown
+        const wrapper = document.createElement("div");
+        wrapper.className = "nav-item dropdown";
+
+        const toggle = document.createElement("a");
+        toggle.className = "nav-link dropdown-toggle";
+        toggle.href = "#";
+        toggle.setAttribute("role", "button");
+        toggle.setAttribute("data-bs-toggle", "dropdown");
+        toggle.setAttribute("aria-expanded", "false");
+        toggle.textContent = user.username || user.fullName || "My Account";
+
+        const menu = document.createElement("ul");
+        menu.className = "dropdown-menu dropdown-menu-end";
+
+        // Profile
+        const profileItem = document.createElement("li");
+        const profileLink = document.createElement("a");
+
+        profileLink.className = "dropdown-item";
+        profileLink.href = "/SoftEcoms/public/users/profilePage.php";
+        profileLink.textContent = "Profile";
+
+        profileItem.appendChild(profileLink);
+
+        // Divider
+        const dividerItem = document.createElement("li");
+        const divider = document.createElement("hr");
+
+        divider.className = "dropdown-divider";
+        dividerItem.appendChild(divider);
+
+        // Sign Out
+        const logoutItem = document.createElement("li");
+        const logoutButton = document.createElement("button");
+
+        logoutButton.type = "button";
+        logoutButton.className = "dropdown-item";
+        logoutButton.textContent = "Sign Out";
+
+        logoutButton.addEventListener("click", async function () {
+
+            logoutButton.disabled = true;
+
+            try {
+
+                const logoutResponse = await fetch(
+                    "http://localhost:3000/logout",
+                    {
+                        method: "POST",
+                        credentials: "include"
+                    }
+                );
+
+                if (!logoutResponse.ok) {
+                    throw new Error("Logout failed.");
+                }
+
+                window.location.href = "/SoftEcoms/public/login.php";
+
+            } catch (error) {
+
+                console.error("Sign out error:", error);
+
+                alert("Could not sign out. Check whether the Node.js server is running.");
+
+                logoutButton.disabled = false;
+            }
+        });
+
+        logoutItem.appendChild(logoutButton);
+
+        menu.append(profileItem, dividerItem, logoutItem);
+        wrapper.append(toggle, menu);
+
+        accountNav.replaceChildren(wrapper);
+
+        // Reveal account after verification
+        showAccountNav();
+
+    } catch (error) {
+
+        console.error("Account navbar error:", error);
+
+        // Show Login if authentication cannot be checked
+        showAccountNav();
+    }
+
+});
 </script>
