@@ -41,7 +41,7 @@ include('includes/topbar.php');
                     </button>
 
                     <p class="mb-0 small">
-                        <a href="register" class="reset-link text-decoration-none">Back to Login</a>
+                        <a href="login" class="reset-link text-decoration-none">Back to Login</a>
                     </p>
                 </form>
 
