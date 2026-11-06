@@ -7,16 +7,121 @@ session_start();
 
 $pageClass = "checkout-page";
 
-// Get all products in the shopping cart
 $allCart = $_SESSION['cart'] ?? [];
+$orderError = "";
 
-// RECEIVE SELECTED PRODUCTS FROM CART.PHP
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+/* PROCESS PLACE ORDER */
+if (
+    $_SERVER['REQUEST_METHOD'] === 'POST' &&
+    ($_POST['action'] ?? '') === 'place_order'
+) {
 
-    if (empty($_POST['selected_ids']) || !is_array($_POST['selected_ids'])) {
+    $selectedIds = $_SESSION['checkout_selected_ids'] ?? [];
+    $cart = [];
+
+    foreach ($selectedIds as $id) {
+        if (isset($allCart[$id])) {
+            $cart[$id] = $allCart[$id];
+        }
+    }
+
+    $fullName = trim($_POST['full_name'] ?? '');
+    $phone = trim($_POST['phone'] ?? '');
+    $email = trim($_POST['email'] ?? '');
+
+    $fulfillment = $_POST['fulfillment'] ?? '';
+    $payment = $_POST['payment'] ?? '';
+
+    $street = trim($_POST['street'] ?? '');
+    $barangay = trim($_POST['barangay'] ?? '');
+    $city = trim($_POST['city'] ?? '');
+    $instructions = trim($_POST['instructions'] ?? '');
+
+    $gcashReference = trim($_POST['gcash_reference'] ?? '');
+
+    if (empty($cart)) {
+        $orderError = "Your selected products are no longer available.";
+    } elseif (
+        $fullName === '' ||
+        $phone === '' ||
+        !filter_var($email, FILTER_VALIDATE_EMAIL)
+    ) {
+        $orderError = "Please provide valid customer information.";
+    } elseif (!in_array($fulfillment, ['delivery', 'pickup'], true)) {
+        $orderError = "Please select a valid delivery method.";
+    } elseif (!in_array($payment, ['cod', 'gcash'], true)) {
+        $orderError = "Please select a valid payment method.";
+    } elseif (
+        $fulfillment === 'delivery' &&
+        ($street === '' || $barangay === '' || $city === '')
+    ) {
+        $orderError = "Please complete your delivery address.";
+    } elseif (
+        $payment === 'gcash' &&
+        $gcashReference === ''
+    ) {
+        $orderError = "Please enter your GCash reference number.";
+    }
+
+    if ($orderError === '') {
+
+        $subtotal = 0;
+
+        foreach ($cart as $item) {
+            $subtotal +=
+                (float) ($item['price'] ?? 0) *
+                (int) ($item['quantity'] ?? 0);
+        }
+
+        $deliveryFee = ($fulfillment === 'delivery') ? 50 : 0;
+        $total = $subtotal + $deliveryFee;
+
+        $orderNumber = 'SC' . date('Ymd') . strtoupper(bin2hex(random_bytes(3)));
+
+        /* SAVE ORDER DETAILS */
+        $_SESSION['order_details'] = [
+            'order_number' => $orderNumber,
+            'order_date' => date('F d, Y h:i A'),
+            'full_name' => $fullName,
+            'phone' => $phone,
+            'email' => $email,
+            'fulfillment' => $fulfillment,
+            'payment_method' => strtoupper($payment),
+            'gcash_reference' => $gcashReference,
+            'street' => $street,
+            'barangay' => $barangay,
+            'city' => $city,
+            'instructions' => $instructions,
+            'subtotal' => $subtotal,
+            'delivery_fee' => $deliveryFee,
+            'total' => $total
+        ];
+
+        /* SAVE ORDERED PRODUCTS */
+        $_SESSION['ordered_items'] = $cart;
+
+        /* REMOVE PURCHASED PRODUCTS FROM CART */
+        foreach ($selectedIds as $id) {
+            unset($allCart[$id]);
+        }
+
+        $_SESSION['cart'] = $allCart;
 
         unset($_SESSION['checkout_selected_ids']);
 
+        /* GO TO CONFIRMATION PAGE */
+        header("Location: confirmation.php");
+        exit();
+    }
+}
+
+/* RECEIVE SELECTED PRODUCTS FROM CART */
+elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
+
+    if (
+        empty($_POST['selected_ids']) ||
+        !is_array($_POST['selected_ids'])
+    ) {
         header("Location: cart.php");
         exit();
     }
@@ -33,33 +138,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $_SESSION['checkout_selected_ids'] = $selectedIds;
 }
 
-// GET SELECTED PRODUCT IDS
+/* GET SELECTED PRODUCT IDS */
 $selectedIds = $_SESSION['checkout_selected_ids'] ?? [];
 
-// BUILD CHECKOUT CART USING SELECTED PRODUCTS ONLY
+/* BUILD CHECKOUT CART */
 $cart = [];
 
 foreach ($selectedIds as $id) {
-
     if (isset($allCart[$id])) {
         $cart[$id] = $allCart[$id];
     }
 }
 
-// PREVENT CHECKOUT IF NO VALID PRODUCTS ARE SELECTED
+/* CHECK IF CART IS EMPTY */
 if (empty($cart)) {
-
     unset($_SESSION['checkout_selected_ids']);
-
     header("Location: cart.php");
     exit();
 }
 
-// CALCULATE SELECTED PRODUCTS SUBTOTAL
+/* CALCULATE SUBTOTAL */
 $subtotal = 0;
 
 foreach ($cart as $item) {
-
     $price = (float) ($item['price'] ?? 0);
     $quantity = (int) ($item['quantity'] ?? 0);
 
@@ -71,6 +172,7 @@ $deliveryFee = 50;
 include('./admin/includes/header.php');
 include('./admin/includes/topbar.php');
 ?>
+
 
 <link rel="stylesheet" href="assets/css/checkout.css">
 
@@ -116,7 +218,8 @@ include('./admin/includes/topbar.php');
 
     <?php } else { ?>
 
-    <form id="checkoutForm">
+    <form id="checkoutForm" method="POST" action="checkout.php">
+    <input type="hidden" name="action" value="place_order">
 
         <div class="checkout-layout">
 
@@ -503,12 +606,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
     paymentOptions.forEach(option => {
         option.addEventListener("change", updatePayment);
-    });
-
-    checkoutForm.addEventListener("submit", function(event) {
-        event.preventDefault();
-
-        alert("Checkout design is ready! Order processing will be connected in the next step.");
     });
 
     updateFulfillment();
