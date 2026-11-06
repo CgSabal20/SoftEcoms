@@ -265,10 +265,10 @@
     font-size: 25px;
 }
 
-/* HIDE HEART */
+/* HEART */
 
 .remove-modal .remove-heart {
-    display: none;
+    color: #D85C5C !important;
 }
 
 /* MODAL TITLE */
