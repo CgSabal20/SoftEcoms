@@ -58,13 +58,6 @@ if (!empty($_SESSION['cart'])) {
                     </li>
 
                     <li class="nav-item">
-                        <a class="nav-link <?= in_array($current_page, ['productpage.php', 'product.php']) ? 'active' : '' ?>"
-                            href="/SoftEcoms/public/productpage.php">
-                            Menu
-                        </a>
-                    </li>
-
-                    <li class="nav-item">
                         <a class="nav-link <?= $current_page === 'contactUs.php' ? 'active' : '' ?>"
                             href="/SoftEcoms/public/contactUs.php">
                             Contact Us
