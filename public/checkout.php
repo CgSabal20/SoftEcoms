@@ -407,7 +407,7 @@ include('./admin/includes/topbar.php');
                     </div>
 
                     <button type="submit" class="place-order-btn">
-                        Place Order <span>→</span>
+                        Place Order
                     </button>
 
                     <p class="summary-note">
