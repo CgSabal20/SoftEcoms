@@ -275,13 +275,6 @@ $cart = $_SESSION['cart'] ?? [];
 
                     </form>
 
-                    <a
-                        href="order.php"
-                        class="btn btn-outline-dark w-100 rounded-pill mt-3"
-                    >
-                        Continue Shopping
-                    </a>
-
                     <small class="text-muted text-center mt-3">
                         Select the products you want to purchase.
                     </small>
