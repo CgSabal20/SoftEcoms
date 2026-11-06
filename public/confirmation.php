@@ -22,8 +22,8 @@ include('./admin/includes/topbar.php');
 
     <!-- PAGE HEADER -->
     <div class="checkout-heading">
-        <h1>Complete Your Order</h1>
-        <p>Just a few more details before your sweet treats are yours.</p>
+    <h1>Your Sweet Order is Confirmed!</h1>
+    <p>Thank you for choosing SweetClaire. Your sweet treats are one step closer!</p>
 
         <div class="checkout-progress">
 
