@@ -2,7 +2,7 @@
 <?php
 session_start();
 
-$pageClass = "checkout-page confirmation-page";
+$pageClass = "checkout-page";
 
 $order = $_SESSION['order_details'] ?? null;
 $orderedItems = $_SESSION['ordered_items'] ?? [];
