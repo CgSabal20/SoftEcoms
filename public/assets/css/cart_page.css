@@ -1,4 +1,9 @@
+
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Poppins:wght@400;500;600;700&display=swap');
+
+/* =====================================
+   CART PAGE
+===================================== */
 
 .cart-page {
     min-height: 100vh;
@@ -17,7 +22,9 @@
     margin: 12px 0;
 }
 
-/* CART ITEM CARD */
+/* =====================================
+   CART ITEM CARD
+===================================== */
 
 .cart-page .cart-item-card {
     border: 2px solid transparent !important;
@@ -73,7 +80,9 @@
     font-size: 13px;
 }
 
-/* ORDER SUMMARY */
+/* =====================================
+   ORDER SUMMARY
+===================================== */
 
 .cart-page .col-lg-4 > .card {
     border: 1px solid #F8DED8;
@@ -108,7 +117,9 @@
     font-size: 13px;
 }
 
-/* UPDATE BUTTON */
+/* =====================================
+   UPDATE BUTTON
+===================================== */
 
 .cart-page .btn-outline-dark {
     color: #D85C5C;
@@ -127,7 +138,9 @@
     transform: translateY(-2px);
 }
 
-/* GRADIENT BUTTONS */
+/* =====================================
+   GRADIENT BUTTONS
+===================================== */
 
 .cart-page .btn-dark {
     color: #FFFFFF;
@@ -173,7 +186,9 @@
     text-decoration: underline;
 }
 
-/* EMPTY CART */
+/* =====================================
+   EMPTY CART
+===================================== */
 
 .cart-page .text-center h4 {
     color: #D85C5C;
@@ -188,7 +203,9 @@
     font-size: 13px;
 }
 
-/* QUANTITY INPUT */
+/* =====================================
+   QUANTITY INPUT
+===================================== */
 
 .cart-page .quantity-input {
     cursor: text;
@@ -206,13 +223,18 @@
     outline: none;
 }
 
-/* CHECKOUT DISABLED STATE */
+/* =====================================
+   CHECKOUT DISABLED STATE
+===================================== */
 
 .cart-page #checkoutButton[aria-disabled="true"] {
     cursor: not-allowed;
     opacity: 0.55;
 }
 
+/* =====================================
+   REMOVE CONFIRMATION MODAL
+===================================== */
 
 .remove-modal .modal-content {
     background: #FFFFFF;
