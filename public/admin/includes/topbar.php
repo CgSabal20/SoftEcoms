@@ -44,6 +44,13 @@ $current_page = basename($_SERVER['PHP_SELF']);
                         </a>
                     </li>
 
+                     <li class="nav-item">
+                        <a class="nav-link"
+                            href="/SoftEcoms/public/productpage.php">
+                            Menu
+                        </a>
+                    </li>
+
                     <li class="nav-item">
                         <a class="nav-link"
                             href="/SoftEcoms/public/contactUs.php">
