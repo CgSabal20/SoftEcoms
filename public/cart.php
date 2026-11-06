@@ -265,7 +265,7 @@ $cart = $_SESSION['cart'] ?? [];
 
                         <button
                             type="submit"
-                            class="btn btn-dark w-100 rounded-pill"
+                            class="Checkout-btn btn btn-dark w-100"
                             id="checkoutButton"
                             aria-disabled="true"
                             disabled
