@@ -657,7 +657,7 @@ include('./admin/includes/topbar.php');
                         class="btn keep-item-btn"
                         data-bs-dismiss="modal"
                     >
-                        Go Back
+                        Review Order
                     </button>
 
                     <button
