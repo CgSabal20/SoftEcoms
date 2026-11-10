@@ -298,7 +298,7 @@ function sweetProductImage($imageName)
     <div class="container py-5">
 
         <div class="section-heading text-center py-4">
-            <h1 class="our_products">Sweetness Deserved</h1>
+            <h1 class="our_products">Best Sellers!</h1>
             <h6 class="section-subtitle">
                 Experience the Sweetness with our Best Sellers at an Affordable Price!
             </h6>
