@@ -117,8 +117,7 @@ include('./admin/includes/topbar.php');
                         type="submit"
                         id="proceedCheckoutButton"
                         class="btn btn-dark w-100 rounded-pill"
-                        disabled
-                    >
+                        disabled>
                         PROCEED TO CHECKOUT
                     </button>
 
@@ -228,7 +227,9 @@ document.addEventListener("DOMContentLoaded", () => {
         maximumFractionDigits: 2
     });
 
+    // ==========================================
     // API REQUEST
+    // ==========================================
 
     async function apiRequest(endpoint, options = {}) {
 
@@ -264,7 +265,9 @@ document.addEventListener("DOMContentLoaded", () => {
         return data;
     }
 
+    // ==========================================
     // LOAD CART
+    // ==========================================
 
     async function loadCart() {
 
@@ -278,21 +281,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
             currentCart = Array.isArray(data.cart) ? data.cart : [];
 
-            /*
-             * IMPORTANT FIX:
-             * Automatically select every product when the cart loads.
-             */
-
             const validIDs = new Set(
                 currentCart.map(item => String(item.cartID))
             );
 
-            // Remove IDs that are no longer in the cart.
             selectedCartIDs = new Set(
                 [...selectedCartIDs].filter(id => validIDs.has(id))
             );
 
-            // If nothing is selected, select all products.
+            // Select all products on the first load.
             if (selectedCartIDs.size === 0 && currentCart.length > 0) {
                 selectedCartIDs = new Set(
                     currentCart.map(item => String(item.cartID))
@@ -302,8 +299,6 @@ document.addEventListener("DOMContentLoaded", () => {
             displayCart();
 
             cartContent.style.display = "flex";
-
-            await updateCartBadge();
 
         } catch (error) {
 
@@ -317,9 +312,12 @@ document.addEventListener("DOMContentLoaded", () => {
             cartLoading.style.display = "none";
 
         }
+
     }
 
+    // ==========================================
     // DISPLAY CART PRODUCTS
+    // ==========================================
 
     function displayCart() {
 
@@ -385,8 +383,6 @@ document.addEventListener("DOMContentLoaded", () => {
             const priceText = document.createElement("p");
             priceText.className = "text-muted mb-2";
             priceText.textContent = "₱" + formatPrice(price);
-
-            // VISIBLE CHECKBOX
 
             const selectLabel = document.createElement("label");
             selectLabel.className = "d-flex align-items-center gap-2 mt-2";
@@ -533,6 +529,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     });
 
                     await loadCart();
+                    await updateCartBadge();
 
                     Swal.fire({
                         icon: "success",
@@ -575,7 +572,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     }
 
+    // ==========================================
     // UPDATE SUMMARY
+    // ==========================================
 
     function updateSummary() {
 
@@ -608,9 +607,8 @@ document.addEventListener("DOMContentLoaded", () => {
         grandTotalElement.textContent =
             formatPrice(grandTotalCents / 100);
 
+        // Selected Items = selected product quantities.
         selectedCountElement.textContent = totalItems;
-
-        // ENABLE CHECKOUT IF AT LEAST ONE PRODUCT IS SELECTED
 
         proceedCheckoutButton.disabled =
             selectedCartIDs.size === 0;
@@ -622,24 +620,27 @@ document.addEventListener("DOMContentLoaded", () => {
 
     }
 
+    // ==========================================
     // UPDATE HEADER CART BADGE
+    // ==========================================
 
     async function updateCartBadge() {
+
+        const badge = document.getElementById("cartCount");
+
+        if (!badge) {
+            return;
+        }
 
         try {
 
             const data = await apiRequest("/cart/count");
 
-            const badge = document.getElementById("cartCount");
+            const count = Number(data.cartCount) || 0;
 
-            if (badge) {
+            badge.textContent = count;
 
-                badge.textContent = data.cartCount;
-
-                badge.style.display =
-                    Number(data.cartCount) > 0 ? "flex" : "none";
-
-            }
+            badge.style.display = count > 0 ? "flex" : "none";
 
         } catch (error) {
 
@@ -649,7 +650,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     }
 
+    // ==========================================
     // CONFIRM REMOVE
+    // ==========================================
 
     confirmRemoveButton.addEventListener("click", async () => {
 
@@ -678,6 +681,7 @@ document.addEventListener("DOMContentLoaded", () => {
             pendingRemoveCartID = null;
 
             await loadCart();
+            await updateCartBadge();
 
             Swal.fire({
                 icon: "success",
@@ -707,7 +711,9 @@ document.addEventListener("DOMContentLoaded", () => {
         pendingRemoveCartID = null;
     });
 
+    // ==========================================
     // PROCEED TO CHECKOUT
+    // ==========================================
 
     proceedCheckoutForm.addEventListener("submit", event => {
 
@@ -742,14 +748,16 @@ document.addEventListener("DOMContentLoaded", () => {
         proceedCheckoutButton.disabled = true;
         proceedCheckoutButton.textContent = "Opening Checkout...";
 
-        // Submit the selected cart IDs to checkout.php
         proceedCheckoutForm.submit();
 
     });
 
+    // ==========================================
     // INITIAL LOAD
+    // ==========================================
 
     loadCart();
+    updateCartBadge();
 
 });
 
