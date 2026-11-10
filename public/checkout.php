@@ -420,7 +420,7 @@ include('./admin/includes/topbar.php');
                             id="placeOrderButton"
                             class="place-order-btn"
                         >
-                            Place Order <span>→</span>
+                            PLACE ORDER <span>→</span>
                         </button>
 
                         <p class="summary-note">

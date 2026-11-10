@@ -53,6 +53,31 @@
     box-shadow: 0 0 0 3px rgba(240, 68, 90, 0.12);
 }
 
+/* CHECKBOX THEME COLOR */
+
+.cart-page .cart-item-card .form-check-input {
+    width: 19px;
+    height: 19px;
+    cursor: pointer;
+    border: 1.5px solid #F56C6C;
+    accent-color: #F56C6C;
+    box-shadow: none;
+}
+
+/* CHECKED STATE */
+
+.cart-page .cart-item-card .form-check-input:checked {
+    background-color: #F56C6C;
+    border-color: #F56C6C;
+}
+
+/* CHECKBOX FOCUS */
+
+.cart-page .cart-item-card .form-check-input:focus {
+    border-color: #FF9B4F;
+    box-shadow: 0 0 0 3px rgba(245, 108, 108, 0.15);
+}
+
 /* PRODUCT IMAGE */
 
 .cart-page .card img {
