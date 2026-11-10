@@ -139,21 +139,21 @@ include('./admin/includes/topbar.php');
         <div class="checkout-progress">
 
             <div class="progress-step completed">
-                <span>1</span>
+                <span>✓</span>
                 <small>Cart</small>
             </div>
 
             <div class="progress-line active"></div>
 
             <div class="progress-step completed">
-                <span>2</span>
+                <span>✓</span>
                 <small>Checkout</small>
             </div>
 
             <div class="progress-line active"></div>
 
             <div class="progress-step current">
-                <span>3</span>
+                <span>✓</span>
                 <small>Confirmation</small>
             </div>
 
