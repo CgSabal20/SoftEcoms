@@ -109,7 +109,7 @@ if (
 
         unset($_SESSION['checkout_selected_ids']);
 
-        /* GO TO CONFIRMATION PAGE */
+        /* GO TO EXISTING CONFIRMATION PAGE */
         header("Location: confirmation.php");
         exit();
     }
@@ -173,7 +173,6 @@ include('./admin/includes/header.php');
 include('./admin/includes/topbar.php');
 ?>
 
-
 <link rel="stylesheet" href="assets/css/checkout.css">
 
 <div class="checkout-container">
@@ -205,6 +204,12 @@ include('./admin/includes/topbar.php');
         </div>
     </div>
 
+    <?php if (!empty($orderError)) { ?>
+        <div class="checkout-error">
+            <?php echo htmlspecialchars($orderError, ENT_QUOTES, 'UTF-8'); ?>
+        </div>
+    <?php } ?>
+
     <?php if (empty($cart)) { ?>
 
         <div class="checkout-empty">
@@ -219,7 +224,7 @@ include('./admin/includes/topbar.php');
     <?php } else { ?>
 
     <form id="checkoutForm" method="POST" action="checkout.php">
-    <input type="hidden" name="action" value="place_order">
+        <input type="hidden" name="action" value="place_order">
 
         <div class="checkout-layout">
 
@@ -266,7 +271,6 @@ include('./admin/includes/topbar.php');
                     </div>
 
                 </section>
-
 
                 <!-- FULFILLMENT -->
                 <section class="checkout-card">
@@ -360,7 +364,6 @@ include('./admin/includes/topbar.php');
 
                 </section>
 
-
                 <!-- PAYMENT METHOD -->
                 <section class="checkout-card">
 
@@ -433,7 +436,6 @@ include('./admin/includes/topbar.php');
                 </section>
 
             </div>
-
 
             <!-- RIGHT SIDE: ORDER SUMMARY -->
             <aside class="checkout-sidebar">
@@ -525,10 +527,70 @@ include('./admin/includes/topbar.php');
 
     </form>
 
+    <!-- ORDER CONFIRMATION MODAL -->
+    <div
+        class="modal fade order-confirm-modal"
+        id="orderConfirmModal"
+        tabindex="-1"
+        aria-hidden="true"
+    >
+
+        <div class="modal-dialog modal-dialog-centered">
+
+            <div class="modal-content">
+
+                <div class="modal-body text-center">
+
+                    <div class="remove-icon">
+                        <i class="fas fa-shopping-bag"></i>
+                    </div>
+
+                    <div class="remove-heart">
+                        <i class="fas fa-heart"></i>
+                    </div>
+
+                    <h4 class="remove-title">Confirm Your Order?</h4>
+
+                    <p class="remove-message">
+                        Are you sure you want to place your order?
+                        Please double-check your information and order details
+                        before continuing.
+                    </p>
+
+                    <div class="remove-actions">
+
+                        <button
+                            type="button"
+                            class="btn keep-item-btn"
+                            data-bs-dismiss="modal"
+                        >
+                            Go Back
+                        </button>
+
+                        <button
+                            type="button"
+                            class="btn confirm-remove-btn"
+                            id="confirmOrder"
+                        >
+                            Yes, Place Order
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
     <?php } ?>
 
 </div>
 
+<!-- BOOTSTRAP JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
@@ -550,6 +612,51 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const subtotal = <?php echo json_encode($subtotal); ?>;
     const deliveryFee = <?php echo json_encode($deliveryFee); ?>;
+
+
+    /* =====================================
+       ORDER CONFIRMATION MODAL
+    ====================================== */
+
+    const orderModalElement = document.getElementById("orderConfirmModal");
+
+    const orderModal = new bootstrap.Modal(orderModalElement);
+
+    const confirmOrder = document.getElementById("confirmOrder");
+
+
+    /* SHOW POPUP AFTER FORM VALIDATION */
+
+    checkoutForm.addEventListener("submit", function (event) {
+
+        event.preventDefault();
+
+        orderModal.show();
+
+    });
+
+
+    /* CONFIRM ORDER */
+
+    confirmOrder.addEventListener("click", function () {
+
+        confirmOrder.disabled = true;
+        confirmOrder.textContent = "Processing...";
+
+        /*
+           Submit the form directly.
+           This continues your existing PHP order processing
+           and redirects to confirmation.php.
+        */
+
+        checkoutForm.submit();
+
+    });
+
+
+    /* =====================================
+       DELIVERY AND PICKUP
+    ====================================== */
 
     function updateFulfillment() {
 
@@ -578,7 +685,13 @@ document.addEventListener("DOMContentLoaded", function () {
                 card.querySelector("input").checked
             );
         });
+
     }
+
+
+    /* =====================================
+       PAYMENT METHOD
+    ====================================== */
 
     function updatePayment() {
 
@@ -598,7 +711,13 @@ document.addEventListener("DOMContentLoaded", function () {
                 option.querySelector("input").checked
             );
         });
+
     }
+
+
+    /* =====================================
+       EVENT LISTENERS
+    ====================================== */
 
     fulfillmentOptions.forEach(option => {
         option.addEventListener("change", updateFulfillment);
@@ -607,6 +726,9 @@ document.addEventListener("DOMContentLoaded", function () {
     paymentOptions.forEach(option => {
         option.addEventListener("change", updatePayment);
     });
+
+
+    /* INITIALIZE */
 
     updateFulfillment();
     updatePayment();

@@ -890,3 +890,148 @@
         padding: 16px;
     }
 }
+
+
+/* =====================================
+   ORDER CONFIRMATION MODAL
+   MATCHES CART REMOVE MODAL
+===================================== */
+
+.order-confirm-modal .modal-content {
+    background: #FFFFFF;
+    border: 1px solid #F8DED8;
+    border-radius: 22px;
+    box-shadow: 0 10px 35px rgba(107, 72, 56, 0.15);
+    overflow: hidden;
+}
+
+.order-confirm-modal .modal-body {
+    padding: 35px;
+    font-family: 'Poppins', sans-serif;
+    text-align: center;
+}
+
+/* SHOPPING BAG ICON */
+
+.order-confirm-modal .remove-icon {
+    width: 65px;
+    height: 65px;
+    margin: 0 auto 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #FFF0EC;
+    color: #F56C6C;
+    font-size: 25px;
+}
+
+/* HEART */
+
+.order-confirm-modal .remove-heart {
+    color: #D85C5C !important;
+}
+
+/* MODAL TITLE */
+
+.order-confirm-modal .remove-title {
+    color: #D85C5C !important;
+    font-family: 'Playfair Display', serif !important;
+    font-size: 26px;
+    font-weight: 700;
+    margin-bottom: 12px;
+}
+
+/* MODAL MESSAGE */
+
+.order-confirm-modal .remove-message {
+    color: #8A7770 !important;
+    font-family: Georgia, serif;
+    font-size: 13px;
+    line-height: 1.8;
+    margin-bottom: 27px;
+}
+
+/* MODAL BUTTONS */
+
+.order-confirm-modal .remove-actions {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+}
+
+/* GO BACK BUTTON */
+
+.order-confirm-modal .keep-item-btn {
+    min-width: 145px;
+    padding: 12px 20px;
+    border-radius: 30px;
+    background: #FFFFFF;
+    border: 1px solid #F56C6C;
+    color: #D85C5C;
+    font-family: 'Poppins', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    transition: 0.25s ease;
+}
+
+.order-confirm-modal .keep-item-btn:hover {
+    background: #FFF5F2;
+    color: #D85C5C;
+    transform: translateY(-2px);
+}
+
+/* CONFIRM ORDER BUTTON */
+
+.order-confirm-modal .confirm-remove-btn {
+    min-width: 145px;
+    padding: 12px 20px;
+    border-radius: 30px;
+    background: linear-gradient(
+        to right,
+        #F56C6C,
+        #FF9B4F,
+        #FFA1A1
+    );
+    border: none;
+    color: #FFFFFF !important;
+    font-family: 'Poppins', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    transition: 0.25s ease;
+}
+
+.order-confirm-modal .confirm-remove-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(245, 108, 108, 0.25);
+    color: #FFFFFF !important;
+}
+
+.order-confirm-modal .confirm-remove-btn:disabled {
+    opacity: 0.65;
+    cursor: wait;
+}
+
+/* MOBILE RESPONSIVE */
+
+@media (max-width: 576px) {
+
+    .order-confirm-modal .modal-body {
+        padding: 25px 20px;
+    }
+
+    .order-confirm-modal .remove-title {
+        font-size: 23px;
+    }
+
+    .order-confirm-modal .remove-actions {
+        flex-direction: column;
+    }
+
+    .order-confirm-modal .keep-item-btn,
+    .order-confirm-modal .confirm-remove-btn {
+        width: 100%;
+    }
+
+}
+
