@@ -13,7 +13,6 @@ if (!function_exists('sweetProductImage')) {
         $dir = __DIR__ . "/assets/product_img/";
         $url = "/SoftEcoms/public/assets/product_img/";
 
-<<<<<<< HEAD
         if ($imageName !== "" && is_file($dir . $imageName)) {
             return $url . rawurlencode($imageName);
         }
@@ -39,39 +38,6 @@ if (!isset($sortOptions[$sort])) {
 }
 $q = trim($_GET['q'] ?? '');
 
-=======
-if (!function_exists('sweetProductImage')) {
-    function sweetProductImage($imageName)
-    {
-        $imageName = basename((string) $imageName);
-        $dir = __DIR__ . "/assets/product_img/";
-        $url = "/SoftEcoms/public/assets/product_img/";
-
-        if ($imageName !== "" && is_file($dir . $imageName)) {
-            return $url . rawurlencode($imageName);
-        }
-        return $url . "placeholder.jpg";
-    }
-}
-
-$sortOptions = [
-    'new'        => 'id DESC',
-    'price_asc'  => 'price ASC',
-    'price_desc' => 'price DESC',
-];
-$sortLabels = [
-    'new'        => 'New',
-    'price_asc'  => 'Price ascending',
-    'price_desc' => 'Price descending',
-];
-
-$sort = $_GET['sort'] ?? 'new';
-if (!isset($sortOptions[$sort])) {
-    $sort = 'new';
-}
-$q = trim($_GET['q'] ?? '');
-
->>>>>>> 6f8cbf8c45019010f2ca7411e47af04c0ea2ff10
 $sql = "SELECT id, productName, price, img
         FROM product_item
         WHERE productName LIKE ?
