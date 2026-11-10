@@ -936,251 +936,228 @@ document.addEventListener("DOMContentLoaded", function () {
 
     }
 
-    // ==========================================
-    // PLACE ORDER
-    // ==========================================
+   
+// ==========================================
+// PLACE ORDER
+// ==========================================
 
-    form.addEventListener("submit", async function (event) {
+form.addEventListener("submit", async function (event) {
 
-        event.preventDefault();
+    event.preventDefault();
 
-        if (selectedCartItems.length === 0) {
+    if (selectedCartItems.length === 0) {
+        Swal.fire(
+            "No selected products",
+            "Return to your cart and select products first.",
+            "warning"
+        );
+        return;
+    }
 
-            Swal.fire(
-                "No selected products",
-                "Return to your cart and select products first.",
-                "warning"
-            );
+    const address = addressInput.value.trim();
+    const phone = phoneInput.value.trim();
 
-            return;
+    const paymentMethod = document.querySelector(
+        'input[name="payment_method"]:checked'
+    )?.value;
 
-        }
+    const latitude = latitudeInput.value;
+    const longitude = longitudeInput.value;
 
-        const address = addressInput.value.trim();
-        const phone = phoneInput.value.trim();
+    if (!address || !phone || !paymentMethod) {
+        Swal.fire(
+            "Incomplete Information",
+            "Please complete your delivery and payment information.",
+            "warning"
+        );
+        return;
+    }
 
-        const paymentMethod = document.querySelector(
-            'input[name="payment_method"]:checked'
-        )?.value;
+    if (!latitude || !longitude) {
+        Swal.fire(
+            "Location Required",
+            "Please select your delivery location on the map.",
+            "warning"
+        );
+        return;
+    }
 
-        const latitude = latitudeInput.value;
-        const longitude = longitudeInput.value;
+    const confirmation = await Swal.fire({
+        title: "Place your order?",
+        text: "Please confirm your selected products and delivery details.",
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonText: "Place Order",
+        cancelButtonText: "Review Order"
+    });
 
-        // VALIDATE ADDRESS
+    if (!confirmation.isConfirmed) return;
 
-        if (!address) {
+    placeOrderButton.disabled = true;
+    placeOrderButton.textContent = "Processing Order...";
 
-            Swal.fire(
-                "Address Required",
-                "Please enter your complete delivery address.",
-                "warning"
-            );
+    try {
 
-            return;
+        // 1. SEND ORDER TO NODE.JS
 
-        }
+        const result = await apiRequest("/checkout", {
 
-        // VALIDATE PHONE
+            method: "POST",
 
-        if (!phone) {
+            headers: {
+                "Content-Type": "application/json"
+            },
 
-            Swal.fire(
-                "Contact Number Required",
-                "Please enter your contact number.",
-                "warning"
-            );
+            body: JSON.stringify({
 
-            return;
+                address: address,
+                phone: phone,
 
-        }
+                latitude: Number(latitude),
+                longitude: Number(longitude),
 
-        // VALIDATE PAYMENT
+                payment_method: paymentMethod,
 
-        if (!paymentMethod) {
+                selected_cart_ids: selectedCartItems.map(
+                    item => Number(item.cartID)
+                )
 
-            Swal.fire(
-                "Payment Required",
-                "Please select a payment method.",
-                "warning"
-            );
-
-            return;
-
-        }
-
-        // VALIDATE MAP
-
-        if (!latitude || !longitude) {
-
-            Swal.fire(
-                "Location Required",
-                "Please select your delivery location on the map.",
-                "warning"
-            );
-
-            return;
-
-        }
-
-        const confirmation = await Swal.fire({
-
-            title: "Place your order?",
-
-            text:
-                "Please confirm that your selected products and delivery details are correct.",
-
-            icon: "question",
-
-            showCancelButton: true,
-
-            confirmButtonText: "Place Order",
-
-            cancelButtonText: "Review Order"
+            })
 
         });
 
-        if (!confirmation.isConfirmed) return;
+        // 2. VERIFY ORDER RESPONSE
 
-        placeOrderButton.disabled = true;
-        placeOrderButton.textContent = "Processing Order...";
+        if (
+            !result.order ||
+            !result.order.orderNumber ||
+            !Array.isArray(result.items) ||
+            result.items.length === 0
+        ) {
+            throw new Error(
+                "Order response is incomplete. Please check the server."
+            );
+        }
 
-        try {
+        // 3. SAVE RECEIPT IN PHP SESSION
 
-            // SEND ORDER TO NODE.JS
-
-            const result = await apiRequest("/checkout", {
+        const confirmationResponse = await fetch(
+            "confirmation.php",
+            {
 
                 method: "POST",
 
+                credentials: "same-origin",
+
                 headers: {
-                    "Content-Type": "application/json"
+                    "Content-Type": "application/json",
+                    "Accept": "application/json"
                 },
 
                 body: JSON.stringify({
 
-                    address: address,
-
-                    phone: phone,
-
-                    latitude: Number(latitude),
-
-                    longitude: Number(longitude),
-
-                    payment_method: paymentMethod,
-
-                    selected_cart_ids: selectedCartItems.map(
-                        item => Number(item.cartID)
-                    )
+                    order: result.order,
+                    items: result.items
 
                 })
 
-            });
-
-            // VALIDATE NODE RESPONSE
-
-            if (!result.order || !result.order.orderNumber) {
-
-                throw new Error(
-                    "The order was processed, but the server returned incomplete receipt information. Contact the store before attempting another checkout."
-                );
-
             }
+        );
 
-            // SAVE RECEIPT IN PHP SESSION
+        // READ RESPONSE SAFELY
 
-            const confirmationResponse = await fetch(
-                "confirmation.php",
-                {
+        const responseText = await confirmationResponse.text();
 
-                    method: "POST",
+        let confirmationData;
 
-                    credentials: "same-origin",
+        try {
 
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Accept": "application/json"
-                    },
-
-                    body: JSON.stringify({
-                        order: result.order
-                    })
-
-                }
-            );
-
-            const confirmationData =
-                await confirmationResponse.json();
-
-            if (
-                !confirmationResponse.ok ||
-                !confirmationData.success
-            ) {
-
-                throw new Error(
-                    "Your order was placed, but the receipt could not be prepared. Order number: " +
-                    result.order.orderNumber
-                );
-
-            }
-
-            // CLEAR PHP CHECKOUT SELECTION
-
-            try {
-
-                await fetch(
-                    "checkout.php?clear_selection=1",
-                    {
-                        credentials: "same-origin"
-                    }
-                );
-
-            } catch (error) {
-
-                console.error(
-                    "Unable to clear PHP checkout selection:",
-                    error
-                );
-
-            }
-
-            // SUCCESS
-
-            await Swal.fire({
-
-                icon: "success",
-
-                title: "Order Placed!",
-
-                text: "Your order has been successfully placed.",
-
-                confirmButtonText: "View Confirmation",
-
-                allowOutsideClick: false
-
-            });
-
-            // REDIRECT TO RECEIPT
-
-            window.location.href = "confirmation.php";
+            confirmationData = JSON.parse(responseText);
 
         } catch (error) {
 
-            console.error("Checkout error:", error);
-
-            Swal.fire(
-                "Checkout Notice",
-                error.message,
-                "error"
+            console.error(
+                "Confirmation PHP response:",
+                responseText
             );
 
-            placeOrderButton.disabled = false;
-
-            placeOrderButton.innerHTML =
-                'Place Order <span>→</span>';
+            throw new Error(
+                "Unable to prepare your confirmation receipt. Check confirmation.php."
+            );
 
         }
 
-    });
+        if (
+            !confirmationResponse.ok ||
+            !confirmationData.success
+        ) {
+
+            throw new Error(
+                confirmationData.message ||
+                "Unable to save your order receipt."
+            );
+
+        }
+
+        // 4. CLEAR PHP CHECKOUT SELECTION
+
+        try {
+
+            await fetch(
+                "checkout.php?clear_selection=1",
+                {
+                    credentials: "same-origin"
+                }
+            );
+
+        } catch (error) {
+
+            console.error(
+                "Unable to clear checkout selection:",
+                error
+            );
+
+        }
+
+        // 5. SUCCESS MESSAGE
+
+        await Swal.fire({
+
+            icon: "success",
+
+            title: "Order Placed!",
+
+            text: "Your order has been successfully placed.",
+
+            confirmButtonText: "View Confirmation",
+
+            allowOutsideClick: false
+
+        });
+
+        // 6. REDIRECT TO CONFIRMATION PAGE
+
+        window.location.href = "confirmation.php";
+
+    } catch (error) {
+
+        console.error("Checkout error:", error);
+
+        Swal.fire(
+            "Checkout Notice",
+            error.message,
+            "error"
+        );
+
+        placeOrderButton.disabled = false;
+
+        placeOrderButton.innerHTML =
+            'PLACE ORDER <span>→</span>';
+
+    }
+
+});
+
 
     // ==========================================
     // INITIALIZE

@@ -4,6 +4,108 @@ session_start();
 
 $pageClass = "checkout-page";
 
+/*
+|--------------------------------------------------------------------------
+| RECEIVE RECEIPT FROM CHECKOUT
+|--------------------------------------------------------------------------
+*/
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+
+    header('Content-Type: application/json; charset=utf-8');
+
+    try {
+
+        $input = json_decode(
+            file_get_contents('php://input'),
+            true
+        );
+
+        if (
+            !is_array($input) ||
+            empty($input['order']) ||
+            empty($input['items']) ||
+            !is_array($input['items'])
+        ) {
+            throw new Exception("Invalid receipt information.");
+        }
+
+        $order = $input['order'];
+        $items = $input['items'];
+
+        if (empty($order['orderNumber'])) {
+            throw new Exception("Order number is missing.");
+        }
+
+        if (empty($items)) {
+            throw new Exception("No ordered products found.");
+        }
+
+        // SAVE ORDER DETAILS
+        $_SESSION['order_details'] = [
+            'order_number' => $order['orderNumber'],
+            'order_date' => $order['order_date'] ?? date('Y-m-d H:i:s'),
+
+            'full_name' => $order['full_name'] ?? '',
+            'phone' => $order['phone'] ?? '',
+            'email' => $order['email'] ?? '',
+
+            'payment_method' => $order['payment_method'] ?? 'Cash',
+            'fulfillment' => $order['fulfillment'] ?? 'delivery',
+
+            'street' => $order['street'] ?? '',
+            'barangay' => $order['barangay'] ?? '',
+            'city' => $order['city'] ?? '',
+
+            'subtotal' => (float)($order['subtotal'] ?? 0),
+            'delivery_fee' => (float)($order['delivery_fee'] ?? 0),
+            'total' => (float)($order['total'] ?? $order['totalPrice'] ?? 0),
+
+            'status' => $order['status'] ?? 'pending'
+        ];
+
+        // SAVE ORDERED PRODUCTS
+        $orderedItems = [];
+
+        foreach ($items as $item) {
+
+            $orderedItems[] = [
+                'name' => $item['name'] ?? 'Product',
+                'quantity' => (int)($item['quantity'] ?? 0),
+                'price' => (float)($item['price'] ?? 0),
+                'image' => $item['image'] ?? ''
+            ];
+
+        }
+
+        $_SESSION['ordered_items'] = $orderedItems;
+
+        echo json_encode([
+            'success' => true,
+            'message' => 'Receipt successfully prepared.'
+        ]);
+
+        exit;
+
+    } catch (Throwable $error) {
+
+        http_response_code(400);
+
+        echo json_encode([
+            'success' => false,
+            'message' => $error->getMessage()
+        ]);
+
+        exit;
+    }
+}
+
+/*
+|--------------------------------------------------------------------------
+| DISPLAY CONFIRMATION PAGE
+|--------------------------------------------------------------------------
+*/
+
 $order = $_SESSION['order_details'] ?? null;
 $orderedItems = $_SESSION['ordered_items'] ?? [];
 
@@ -22,8 +124,17 @@ include('./admin/includes/topbar.php');
 
     <!-- PAGE HEADER -->
     <div class="checkout-heading">
-    <h1>Your Sweet Order is Confirmed!</h1>
-    <p>Thank you for choosing SweetClaire. Your sweet treats are one step closer!</p>
+
+        <span class="checkout-eyebrow">
+            SWEET! • ORDER COMPLETED
+        </span>
+
+        <h1>Your Sweet Order is Confirmed!</h1>
+
+        <p>
+            Thank you for choosing SweetClaire.
+            Your sweet treats are one step closer!
+        </p>
 
         <div class="checkout-progress">
 
@@ -47,6 +158,7 @@ include('./admin/includes/topbar.php');
             </div>
 
         </div>
+
     </div>
 
     <!-- CONFIRMATION CARD -->
@@ -64,57 +176,69 @@ include('./admin/includes/topbar.php');
         </p>
 
         <div class="order-number">
+
             <span>Order Number</span>
+
             <h3>
-                <?php echo htmlspecialchars($order['order_number']); ?>
+                <?= htmlspecialchars($order['order_number']) ?>
             </h3>
+
         </div>
 
         <div class="order-details">
 
             <div>
                 <span>Order Date</span>
-                <strong><?php echo htmlspecialchars($order['order_date']); ?></strong>
+                <strong>
+                    <?= htmlspecialchars($order['order_date']) ?>
+                </strong>
             </div>
 
             <div>
                 <span>Customer Name</span>
-                <strong><?php echo htmlspecialchars($order['full_name']); ?></strong>
+                <strong>
+                    <?= htmlspecialchars($order['full_name']) ?>
+                </strong>
             </div>
 
             <div>
                 <span>Phone Number</span>
-                <strong><?php echo htmlspecialchars($order['phone']); ?></strong>
+                <strong>
+                    <?= htmlspecialchars($order['phone']) ?>
+                </strong>
             </div>
 
             <div>
                 <span>Email Address</span>
-                <strong><?php echo htmlspecialchars($order['email']); ?></strong>
+                <strong>
+                    <?= htmlspecialchars($order['email']) ?>
+                </strong>
             </div>
 
             <div>
                 <span>Payment Method</span>
-                <strong><?php echo htmlspecialchars($order['payment_method']); ?></strong>
+                <strong>
+                    <?= htmlspecialchars($order['payment_method']) ?>
+                </strong>
             </div>
 
             <div>
                 <span>Fulfillment</span>
-                <strong><?php echo htmlspecialchars(ucfirst($order['fulfillment'])); ?></strong>
+                <strong>
+                    <?= htmlspecialchars(ucfirst($order['fulfillment'])) ?>
+                </strong>
             </div>
 
             <?php if ($order['fulfillment'] === 'delivery') { ?>
+
                 <div>
                     <span>Delivery Address</span>
+
                     <strong>
-                        <?php
-                        echo htmlspecialchars(
-                            $order['street'] . ', ' .
-                            $order['barangay'] . ', ' .
-                            $order['city']
-                        );
-                        ?>
+                        <?= htmlspecialchars($order['street']) ?>
                     </strong>
                 </div>
+
             <?php } ?>
 
         </div>
@@ -126,20 +250,22 @@ include('./admin/includes/topbar.php');
             <div class="confirmation-item">
 
                 <div class="item-info">
+
                     <strong>
-                        <?php echo htmlspecialchars($item['name']); ?>
+                        <?= htmlspecialchars($item['name']) ?>
                     </strong>
 
                     <span>
-                        Quantity: <?php echo (int) $item['quantity']; ?>
+                        Quantity: <?= (int)$item['quantity'] ?>
                     </span>
+
                 </div>
 
                 <strong>
-                    ₱<?php echo number_format(
-                        (float) $item['price'] * (int) $item['quantity'],
+                    ₱<?= number_format(
+                        (float)$item['price'] * (int)$item['quantity'],
                         2
-                    ); ?>
+                    ) ?>
                 </strong>
 
             </div>
@@ -148,17 +274,28 @@ include('./admin/includes/topbar.php');
 
         <div class="summary-row">
             <span>Subtotal</span>
-            <strong>₱<?php echo number_format($order['subtotal'], 2); ?></strong>
+
+            <strong>
+                ₱<?= number_format($order['subtotal'], 2) ?>
+            </strong>
         </div>
 
         <div class="summary-row">
             <span>Delivery Fee</span>
-            <strong>₱<?php echo number_format($order['delivery_fee'], 2); ?></strong>
+
+            <strong>
+                ₱<?= number_format($order['delivery_fee'], 2) ?>
+            </strong>
         </div>
 
         <div class="confirmation-total">
+
             <span>Total Amount</span>
-            <h2>₱<?php echo number_format($order['total'], 2); ?></h2>
+
+            <h2>
+                ₱<?= number_format($order['total'], 2) ?>
+            </h2>
+
         </div>
 
         <a href="order.php" class="continue-shopping">
