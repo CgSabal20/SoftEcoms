@@ -174,7 +174,7 @@ function sweetProductImage($imageName)
                                         </p>
 
                                         <p class="card-price">
-                                            $<?php echo number_format($productPrice, 2); ?>
+                                            ₱<?php echo number_format($productPrice, 2); ?>
                                         </p>
 
                                     </div>
@@ -337,7 +337,7 @@ function sweetProductImage($imageName)
                                     </h6>
 
                                     <p class="best-price">
-                                        $<?php echo number_format($productPrice, 2); ?>
+                                        ₱<?php echo number_format($productPrice, 2); ?>
                                     </p>
                                 </div>
 
