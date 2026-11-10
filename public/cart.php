@@ -12,6 +12,7 @@ include('./admin/includes/topbar.php');
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
 
 <style>
+
 .cart-item-card {
     cursor: pointer;
     border: 2px solid transparent;
@@ -52,6 +53,7 @@ include('./admin/includes/topbar.php');
     position: sticky;
     top: 20px;
 }
+
 </style>
 
 <div class="container cart-layout my-5">
@@ -71,12 +73,15 @@ include('./admin/includes/topbar.php');
             <div id="cartItems"></div>
 
             <div id="emptyCart" class="text-center py-5" style="display:none;">
+
                 <h4>Your cart is empty!</h4>
+
                 <p>Looks like you haven't added any pastries yet.</p>
 
                 <a href="order.php" class="btn btn-dark mt-3">
                     Continue Shopping
                 </a>
+
             </div>
 
         </div>
@@ -117,14 +122,17 @@ include('./admin/includes/topbar.php');
                         type="submit"
                         id="proceedCheckoutButton"
                         class="btn btn-dark w-100 rounded-pill"
-                        disabled>
+                        disabled
+                    >
                         PROCEED TO CHECKOUT
                     </button>
 
                 </form>
 
-                <a href="order.php"
-                   class="btn btn-outline-dark w-100 rounded-pill mt-3">
+                <a
+                    href="order.php"
+                    class="btn btn-outline-dark w-100 rounded-pill mt-3"
+                >
                     Continue Shopping
                 </a>
 
@@ -139,6 +147,7 @@ include('./admin/includes/topbar.php');
     </div>
 
 </div>
+
 
 <!-- REMOVE PRODUCT MODAL -->
 
@@ -167,14 +176,16 @@ include('./admin/includes/topbar.php');
                     <button
                         type="button"
                         class="btn keep-item-btn"
-                        data-bs-dismiss="modal">
+                        data-bs-dismiss="modal"
+                    >
                         Keep Item
                     </button>
 
                     <button
                         type="button"
                         class="btn confirm-remove-btn"
-                        id="confirmRemoveButton">
+                        id="confirmRemoveButton"
+                    >
                         Remove
                     </button>
 
@@ -187,6 +198,7 @@ include('./admin/includes/topbar.php');
     </div>
 
 </div>
+
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -221,11 +233,18 @@ document.addEventListener("DOMContentLoaded", () => {
     let currentCart = [];
     let selectedCartIDs = new Set();
     let pendingRemoveCartID = null;
+    let hasLoadedCart = false;
+
+
+    // ==========================================
+    // FORMAT PRICE
+    // ==========================================
 
     const formatPrice = amount => Number(amount).toLocaleString("en-PH", {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
     });
+
 
     // ==========================================
     // API REQUEST
@@ -247,23 +266,75 @@ document.addEventListener("DOMContentLoaded", () => {
         let data;
 
         try {
+
             data = JSON.parse(responseText);
+
         } catch (error) {
+
             console.error("API response:", responseText);
-            throw new Error("Invalid server response. Check your Node.js server.");
+
+            throw new Error(
+                "Invalid server response. Check your Node.js server."
+            );
+
         }
 
         if (response.status === 401) {
+
             window.location.href = "/SoftEcoms/public/login.php";
+
             throw new Error("Please log in first.");
+
         }
 
         if (!response.ok || data.success === false) {
-            throw new Error(data.message || "Something went wrong.");
+
+            throw new Error(
+                data.message || "Something went wrong."
+            );
+
         }
 
         return data;
+
     }
+
+
+    // ==========================================
+    // UPDATE HEADER CART BADGE
+    // Always use /cart/count.
+    // ==========================================
+
+    async function updateCartBadge() {
+
+        const badge = document.getElementById("cartCount");
+
+        if (!badge) {
+            return;
+        }
+
+        try {
+
+            const data = await apiRequest("/cart/count");
+
+            const count = Math.max(
+                0,
+                Number(data.cartCount) || 0
+            );
+
+            badge.textContent = count;
+
+            badge.style.display =
+                count > 0 ? "flex" : "none";
+
+        } catch (error) {
+
+            console.error("Cart badge error:", error);
+
+        }
+
+    }
+
 
     // ==========================================
     // LOAD CART
@@ -279,7 +350,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const data = await apiRequest("/cart");
 
-            currentCart = Array.isArray(data.cart) ? data.cart : [];
+            currentCart = Array.isArray(data.cart)
+                ? data.cart
+                : [];
 
             const validIDs = new Set(
                 currentCart.map(item => String(item.cartID))
@@ -289,12 +362,16 @@ document.addEventListener("DOMContentLoaded", () => {
                 [...selectedCartIDs].filter(id => validIDs.has(id))
             );
 
-            // Select all products on the first load.
-            if (selectedCartIDs.size === 0 && currentCart.length > 0) {
+            // Select all products only on the first load.
+            if (!hasLoadedCart && currentCart.length > 0) {
+
                 selectedCartIDs = new Set(
                     currentCart.map(item => String(item.cartID))
                 );
+
             }
+
+            hasLoadedCart = true;
 
             displayCart();
 
@@ -314,6 +391,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
     }
+
 
     // ==========================================
     // DISPLAY CART PRODUCTS
@@ -349,6 +427,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const row = document.createElement("div");
             row.className = "row align-items-center";
 
+
             // PRODUCT IMAGE
 
             const imageColumn = document.createElement("div");
@@ -372,6 +451,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             imageColumn.appendChild(image);
 
+
             // PRODUCT DETAILS
 
             const detailsColumn = document.createElement("div");
@@ -385,7 +465,8 @@ document.addEventListener("DOMContentLoaded", () => {
             priceText.textContent = "₱" + formatPrice(price);
 
             const selectLabel = document.createElement("label");
-            selectLabel.className = "d-flex align-items-center gap-2 mt-2";
+            selectLabel.className =
+                "d-flex align-items-center gap-2 mt-2";
 
             const selectCheckbox = document.createElement("input");
 
@@ -399,6 +480,7 @@ document.addEventListener("DOMContentLoaded", () => {
             selectLabel.append(selectCheckbox, selectText);
 
             detailsColumn.append(name, priceText, selectLabel);
+
 
             // QUANTITY
 
@@ -428,7 +510,8 @@ document.addEventListener("DOMContentLoaded", () => {
             quantityForm.append(quantityInput, updateButton);
             quantityColumn.appendChild(quantityForm);
 
-            // ITEM SUBTOTAL AND REMOVE
+
+            // SUBTOTAL AND REMOVE
 
             const subtotalColumn = document.createElement("div");
             subtotalColumn.className = "col-md-2 text-md-end";
@@ -460,21 +543,27 @@ document.addEventListener("DOMContentLoaded", () => {
             card.appendChild(body);
             cartItems.appendChild(card);
 
+
             // CHECKBOX SELECTION
 
             selectCheckbox.addEventListener("change", () => {
 
                 if (selectCheckbox.checked) {
+
                     selectedCartIDs.add(cartID);
                     card.classList.add("selected");
+
                 } else {
+
                     selectedCartIDs.delete(cartID);
                     card.classList.remove("selected");
+
                 }
 
                 updateSummary();
 
             });
+
 
             // CARD SELECTION
 
@@ -489,9 +578,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
 
                 selectCheckbox.checked = !selectCheckbox.checked;
-                selectCheckbox.dispatchEvent(new Event("change"));
+
+                selectCheckbox.dispatchEvent(
+                    new Event("change")
+                );
 
             });
+
 
             // UPDATE QUANTITY
 
@@ -501,7 +594,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 const newQuantity = Number(quantityInput.value);
 
-                if (!Number.isSafeInteger(newQuantity) || newQuantity < 1) {
+                if (
+                    !Number.isSafeInteger(newQuantity) ||
+                    newQuantity < 1
+                ) {
 
                     Swal.fire(
                         "Invalid quantity",
@@ -510,6 +606,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     );
 
                     return;
+
                 }
 
                 updateButton.disabled = true;
@@ -529,6 +626,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     });
 
                     await loadCart();
+
+                    // Refresh badge after quantity update.
                     await updateCartBadge();
 
                     Swal.fire({
@@ -553,6 +652,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             });
 
+
             // REMOVE PRODUCT
 
             removeButton.addEventListener("click", () => {
@@ -572,6 +672,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     }
 
+
     // ==========================================
     // UPDATE SUMMARY
     // ==========================================
@@ -587,7 +688,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
-            const priceCents = Math.round(Number(item.price) * 100);
+            const priceCents = Math.round(
+                Number(item.price) * 100
+            );
+
             const quantity = Number(item.quantity);
 
             subtotalCents += priceCents * quantity;
@@ -607,7 +711,7 @@ document.addEventListener("DOMContentLoaded", () => {
         grandTotalElement.textContent =
             formatPrice(grandTotalCents / 100);
 
-        // Selected Items = selected product quantities.
+        // Selected Items counts selected quantities.
         selectedCountElement.textContent = totalItems;
 
         proceedCheckoutButton.disabled =
@@ -620,35 +724,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     }
 
-    // ==========================================
-    // UPDATE HEADER CART BADGE
-    // ==========================================
-
-    async function updateCartBadge() {
-
-        const badge = document.getElementById("cartCount");
-
-        if (!badge) {
-            return;
-        }
-
-        try {
-
-            const data = await apiRequest("/cart/count");
-
-            const count = Number(data.cartCount) || 0;
-
-            badge.textContent = count;
-
-            badge.style.display = count > 0 ? "flex" : "none";
-
-        } catch (error) {
-
-            console.error("Cart badge error:", error);
-
-        }
-
-    }
 
     // ==========================================
     // CONFIRM REMOVE
@@ -675,12 +750,17 @@ document.addEventListener("DOMContentLoaded", () => {
                 })
             });
 
-            selectedCartIDs.delete(String(pendingRemoveCartID));
+            selectedCartIDs.delete(
+                String(pendingRemoveCartID)
+            );
 
             removeModal.hide();
+
             pendingRemoveCartID = null;
 
             await loadCart();
+
+            // Refresh badge after removing product.
             await updateCartBadge();
 
             Swal.fire({
@@ -707,9 +787,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
     });
 
-    removeModalElement.addEventListener("hidden.bs.modal", () => {
-        pendingRemoveCartID = null;
-    });
+
+    removeModalElement.addEventListener(
+        "hidden.bs.modal",
+        () => {
+            pendingRemoveCartID = null;
+        }
+    );
+
 
     // ==========================================
     // PROCEED TO CHECKOUT
@@ -746,18 +831,29 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         proceedCheckoutButton.disabled = true;
-        proceedCheckoutButton.textContent = "Opening Checkout...";
+
+        proceedCheckoutButton.textContent =
+            "Opening Checkout...";
 
         proceedCheckoutForm.submit();
 
     });
 
+
     // ==========================================
     // INITIAL LOAD
     // ==========================================
 
-    loadCart();
-    updateCartBadge();
+    async function initializeCart() {
+
+        await loadCart();
+
+        // Get the badge count after the cart has loaded.
+        await updateCartBadge();
+
+    }
+
+    initializeCart();
 
 });
 
