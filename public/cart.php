@@ -138,7 +138,7 @@ include('./admin/includes/topbar.php');
                 </a>
 
                 <small class="text-muted text-center mt-3">
-                    Select the products you want to purchase.
+                    Select the products you want to checkout.
                 </small>
 
             </div>
