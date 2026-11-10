@@ -762,13 +762,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             // Refresh badge after removing product.
             await updateCartBadge();
-
-            Swal.fire({
-                icon: "success",
-                title: "Product removed",
-                timer: 1000,
-                showConfirmButton: false
-            });
+            
 
         } catch (error) {
 
