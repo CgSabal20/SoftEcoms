@@ -371,7 +371,7 @@ function sweetProductImage($imageName)
     <div class="container text-white py-5">
         <div class="row py-5">
             <div class="col-lg-12 m-auto text-center">
-                <h1 class="font-weight-bold py-3">Invite All!</h1>
+                <h1 class="font-weight-bold py-3">Contact Us!</h1>
                 <h6 class="cta-subtitle">
                     Enjoy the heartfelt moments with your Loved Ones at our Shop!
                 </h6>
