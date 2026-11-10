@@ -210,7 +210,7 @@ function sweetProductImage($imageName)
         <?php endif; ?>
 
         <div class="text-center mt-4">
-            <a href="/SoftEcoms/public/products.php" class="btn2">
+            <a href="/SoftEcoms/public/order.php" class="btn2">
                 Click For More
             </a>
         </div>
