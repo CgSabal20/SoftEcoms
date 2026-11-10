@@ -86,7 +86,8 @@ include('./admin/includes/topbar.php');
 
         </div>
 
-        <div class="col-lg-4">
+        <!-- ORDER SUMMARY -->
+        <div class="col-lg-4" id="orderSummaryColumn">
 
             <div class="card shadow-sm rounded-4 p-4" id="orderSummary">
 
@@ -215,6 +216,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const cartItems = document.getElementById("cartItems");
     const emptyCart = document.getElementById("emptyCart");
 
+    // ORDER SUMMARY COLUMN
+    const orderSummaryColumn = document.getElementById("orderSummaryColumn");
+
     const subtotalElement = document.getElementById("subtotal");
     const taxElement = document.getElementById("tax");
     const grandTotalElement = document.getElementById("grandTotal");
@@ -302,7 +306,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // ==========================================
     // UPDATE HEADER CART BADGE
-    // Always use /cart/count.
     // ==========================================
 
     async function updateCartBadge() {
@@ -401,8 +404,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
         cartItems.innerHTML = "";
 
-        emptyCart.style.display =
-            currentCart.length === 0 ? "block" : "none";
+        const isCartEmpty = currentCart.length === 0;
+
+        // SHOW EMPTY CART MESSAGE
+        emptyCart.style.display = isCartEmpty ? "block" : "none";
+
+        // HIDE ORDER SUMMARY WHEN CART IS EMPTY
+        orderSummaryColumn.style.display = isCartEmpty ? "none" : "block";
+
 
         currentCart.forEach(item => {
 
@@ -627,7 +636,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     await loadCart();
 
-                    // Refresh badge after quantity update.
                     await updateCartBadge();
 
                     Swal.fire({
@@ -762,7 +770,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
             // Refresh badge after removing product.
             await updateCartBadge();
-            
+
+            // No success notification here.
 
         } catch (error) {
 
