@@ -325,12 +325,6 @@ document.addEventListener("DOMContentLoaded", function () {
             }
 
             showMessage("✓ Added to your cart!");
-
-            // Open cart page
-            setTimeout(function () {
-                window.location.href = "/SoftEcoms/public/cart.php";
-            }, 700);
-
         } catch (error) {
             console.error("Add to cart error:", error);
             showMessage("✕ " + error.message, true);
