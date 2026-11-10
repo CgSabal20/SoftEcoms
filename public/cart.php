@@ -138,7 +138,7 @@ include('./admin/includes/topbar.php');
                 </a>
 
                 <small class="text-muted text-center mt-3">
-                    All products are selected by default. You can uncheck products you don't want to purchase.
+                    Select the products you want to purchase.
                 </small>
 
             </div>
