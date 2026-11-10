@@ -1,30 +1,21 @@
-
-/* =====================================
-   CHECKOUT PAGE
-===================================== */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Poppins:wght@400;500;600;700&display=swap');
 
 .checkout-page {
+    min-height: 100vh;
     background: #FFF5F2;
     color: #704638;
+    font-family: 'Poppins', sans-serif;
+    padding: 1px 0 70px;
 }
-
-/* =====================================
-   CONTAINER
-===================================== */
 
 .checkout-container {
     width: min(1180px, 92%);
     margin: 55px auto 90px;
 }
 
-/* =====================================
-   PAGE HEADING
-===================================== */
-
 .checkout-heading {
     text-align: center;
     margin-bottom: 48px;
-    margin-left: 30px;
 }
 
 .checkout-eyebrow {
@@ -35,7 +26,7 @@
 }
 
 .checkout-heading h1 {
-    font-family: Georgia, serif;
+    font-family: 'Playfair Display', Georgia, serif;
     font-size: clamp(32px, 5vw, 45px);
     color: #D85C5C;
     margin: 12px 0;
@@ -45,10 +36,6 @@
     color: #8A7770;
     font-size: 14px;
 }
-
-/* =====================================
-   CHECKOUT PROGRESS
-===================================== */
 
 .checkout-progress {
     display: flex;
@@ -86,7 +73,7 @@
 .progress-step.completed span,
 .progress-step.current span {
     background: #F56C6C;
-    color: white;
+    color: #fff;
 }
 
 .progress-step.current {
@@ -105,13 +92,9 @@
     background: #F56C6C;
 }
 
-/* =====================================
-   MAIN LAYOUT
-===================================== */
-
 .checkout-layout {
     display: grid;
-    grid-template-columns: minmax(0, 1.65fr) minmax(300px, 0.9fr);
+    grid-template-columns: minmax(0, 1.65fr) minmax(300px, .9fr);
     align-items: start;
     gap: 28px;
 }
@@ -122,17 +105,13 @@
     gap: 22px;
 }
 
-/* =====================================
-   CHECKOUT CARDS
-===================================== */
-
 .checkout-card,
 .summary-card {
-    background: #FFFFFF;
+    background: #fff;
     border: 1px solid #F8DED8;
     border-radius: 18px;
     padding: 30px;
-    box-shadow: 0 4px 15px rgba(245, 108, 108, 0.10);
+    box-shadow: 0 4px 15px rgba(245, 108, 108, .10);
 }
 
 .section-heading {
