@@ -105,11 +105,11 @@ include('includes/topbar.php');
                 ));
             ?></p>
 
-            <form
-                method="POST"
-                action="../app/controllers/cartController.php"
-                id="cartForm"
-            >
+          <form
+    method="POST"
+    action="http://localhost:3000/cart/add"
+    id="cartForm"
+>
                 <input
                     type="hidden"
                     name="product_uuid"
@@ -202,7 +202,6 @@ include('includes/topbar.php');
 }
 </style>
 
-
 <script>
 document.addEventListener("DOMContentLoaded", function () {
 
@@ -243,6 +242,10 @@ document.addEventListener("DOMContentLoaded", function () {
         event.preventDefault();
 
         const quantity = Number(quantityInput.value);
+
+        const productUUID = form.querySelector(
+            'input[name="product_uuid"]'
+        ).value;
 
         if (!Number.isInteger(quantity) || quantity < 1) {
             quantityInput.value = 1;
@@ -405,7 +408,6 @@ document.addEventListener("DOMContentLoaded", function () {
         });
 
         setTimeout(function () {
-
             toast.classList.remove("show");
 
             setTimeout(function () {
@@ -417,4 +419,3 @@ document.addEventListener("DOMContentLoaded", function () {
 
 });
 </script>
-
