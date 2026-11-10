@@ -296,7 +296,7 @@ include('./admin/includes/topbar.php');
                 ₱<?= number_format($order['total'], 2) ?>
             </h2>
 
-        </div>
+            </div>
 
         <a href="order.php" class="continue-shopping">
             Continue Shopping
