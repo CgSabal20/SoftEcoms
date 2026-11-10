@@ -417,3 +417,14 @@
     }
 
 }
+
+/* =====================================
+   EMPTY CART POSITION
+===================================== */
+
+.cart-page #emptyCart {
+    width: 100%;
+    position: relative;
+    left: 213px;       
+    top: 140px;       
+}
