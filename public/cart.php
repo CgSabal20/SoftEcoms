@@ -365,14 +365,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 [...selectedCartIDs].filter(id => validIDs.has(id))
             );
 
-            // Select all products only on the first load.
-            if (!hasLoadedCart && currentCart.length > 0) {
 
-                selectedCartIDs = new Set(
-                    currentCart.map(item => String(item.cartID))
-                );
-
-            }
+            // Do not automatically select products.
+            // Customers must manually select items for checkout.
+            hasLoadedCart = true;
 
             hasLoadedCart = true;
 
