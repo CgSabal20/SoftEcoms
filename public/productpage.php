@@ -211,6 +211,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const increaseButton = document.getElementById("increaseQuantity");
     const addButton = form.querySelector(".buy-btn");
 
+    // Find the cart icon
     const cartIcon =
         document.getElementById("cartIcon") ||
         document.querySelector('a.nav-icon[href*="cart.php"]');
@@ -236,9 +237,9 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
+   
     // Add product to cart
     form.addEventListener("submit", async function (event) {
-
         event.preventDefault();
 
         const quantity = Number(quantityInput.value);
@@ -253,6 +254,11 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
 
+        if (!productUUID) {
+            showMessage("Product UUID is missing.", true);
+            return;
+        }
+
         if (addButton.disabled) return;
 
         addButton.disabled = true;
@@ -261,66 +267,77 @@ document.addEventListener("DOMContentLoaded", function () {
         addButton.innerHTML = "Adding...";
 
         try {
-
-            // Send the product information to PHP
-            const formData = new FormData(form);
-
-            // PHP checks this field to process the cart request
-            formData.set("add_to_cart", "1");
-
             const response = await fetch(
-                "../app/controllers/cartController.php",
+                "http://localhost:3000/cart/add",
                 {
                     method: "POST",
-                    body: formData,
-                    credentials: "same-origin",
+                    credentials: "include",
                     headers: {
-                        "X-Requested-With": "XMLHttpRequest",
+                        "Content-Type": "application/json",
                         "Accept": "application/json"
-                    }
+                    },
+                    body: JSON.stringify({
+                        product_uuid: productUUID,
+                        quantity: quantity
+                    })
                 }
             );
 
-            const data = await response.json();
+            // Read response as text first
+            const responseText = await response.text();
 
-            // Redirect only if the user is not logged in
-            if (data.redirect) {
-                window.location.href = data.redirect;
+            console.log("Cart API Status:", response.status);
+            console.log("Cart API Response:", responseText);
+
+            let data;
+
+            try {
+                data = JSON.parse(responseText);
+            } catch (error) {
+                throw new Error(
+                    "The Node.js server returned an invalid response. Check the console."
+                );
+            }
+
+            // Handle authentication
+            if (response.status === 401) {
+                window.location.href =
+                    data.redirect || "/SoftEcoms/public/login.php";
                 return;
             }
 
             if (!response.ok || !data.success) {
-                showMessage(data.message || "Unable to add product.", true);
-                return;
+                throw new Error(
+                    data.message || "Unable to add product to cart."
+                );
             }
 
-            // Update cart count
-            const cartCount = document.getElementById("cartCount");
-
-            if (cartCount) {
-                cartCount.textContent = data.cartCount;
-            }
-
-            // Animate product image toward cart icon
+            // Start flying product animation after successful addition
             await animateProductToCart();
 
-            // Show success notification
-            showMessage(data.message || "Product added to cart!");
+            // Update cart count
+            const badge = document.getElementById("cartCount");
+
+            if (badge) {
+                badge.textContent = data.cartCount;
+                badge.style.display =
+                    data.cartCount > 0 ? "flex" : "none";
+            }
+
+            showMessage("✓ Added to your cart!");
+
+            // Open cart page
+            setTimeout(function () {
+                window.location.href = "/SoftEcoms/public/cart.php";
+            }, 700);
 
         } catch (error) {
-
             console.error("Add to cart error:", error);
-
-            showMessage(
-                "Something went wrong. Please try again.",
-                true
-            );
+            showMessage("✕ " + error.message, true);
 
         } finally {
-
             addButton.disabled = false;
             addButton.innerHTML = originalText;
-
         }
     });
 
@@ -334,6 +351,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 document.querySelector(".image-wrapper img");
 
             if (!productImage || !cartIcon) {
+                console.error("Product image or cart icon was not found.");
                 resolve();
                 return;
             }
@@ -354,17 +372,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
             document.body.appendChild(flyingImage);
 
+            // Force browser to register starting position
             flyingImage.getBoundingClientRect();
 
             requestAnimationFrame(function () {
 
-                const moveX =
-                    (end.left + end.width / 2) -
-                    (start.left + start.width / 2);
-
-                const moveY =
-                    (end.top + end.height / 2) -
-                    (start.top + start.height / 2);
+                const moveX = (end.left + end.width / 2) - (start.left + start.width / 2);
+                const moveY = (end.top + end.height / 2) - (start.top + start.height / 2);
 
                 flyingImage.style.transform =
                     `translate(${moveX}px, ${moveY}px) scale(0.12)`;
@@ -387,8 +401,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-
-    // Toast notification
+    // Notification
     function showMessage(message, isError = false) {
 
         const toast = document.createElement("div");

@@ -1,173 +1,54 @@
 
 <?php
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
 session_start();
 
 $pageClass = "checkout-page";
 
-$allCart = $_SESSION['cart'] ?? [];
-$orderError = "";
+// Clear selected cart IDs after successful checkout.
+if (isset($_GET['clear_selection']) && $_GET['clear_selection'] === '1') {
+    unset($_SESSION['checkout_selected_cart_ids']);
 
-/* PROCESS PLACE ORDER */
-if (
-    $_SERVER['REQUEST_METHOD'] === 'POST' &&
-    ($_POST['action'] ?? '') === 'place_order'
-) {
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode(['success' => true]);
+    exit;
+}
 
-    $selectedIds = $_SESSION['checkout_selected_ids'] ?? [];
-    $cart = [];
+// Receive selected cart IDs from cart.php.
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    foreach ($selectedIds as $id) {
-        if (isset($allCart[$id])) {
-            $cart[$id] = $allCart[$id];
+    $submitted = $_POST['selected_cart_ids'] ?? [];
+
+    if (!is_array($submitted)) {
+        $submitted = [];
+    }
+
+    $selectedIDs = [];
+
+    foreach ($submitted as $id) {
+        $validated = filter_var($id, FILTER_VALIDATE_INT);
+
+        if ($validated !== false && $validated > 0) {
+            $selectedIDs[] = $validated;
         }
     }
 
-    $fullName = trim($_POST['full_name'] ?? '');
-    $phone = trim($_POST['phone'] ?? '');
-    $email = trim($_POST['email'] ?? '');
+    $selectedIDs = array_values(array_unique($selectedIDs));
 
-    $fulfillment = $_POST['fulfillment'] ?? '';
-    $payment = $_POST['payment'] ?? '';
-
-    $street = trim($_POST['street'] ?? '');
-    $barangay = trim($_POST['barangay'] ?? '');
-    $city = trim($_POST['city'] ?? '');
-    $instructions = trim($_POST['instructions'] ?? '');
-
-    $gcashReference = trim($_POST['gcash_reference'] ?? '');
-
-    if (empty($cart)) {
-        $orderError = "Your selected products are no longer available.";
-    } elseif (
-        $fullName === '' ||
-        $phone === '' ||
-        !filter_var($email, FILTER_VALIDATE_EMAIL)
-    ) {
-        $orderError = "Please provide valid customer information.";
-    } elseif (!in_array($fulfillment, ['delivery', 'pickup'], true)) {
-        $orderError = "Please select a valid delivery method.";
-    } elseif (!in_array($payment, ['cod', 'gcash'], true)) {
-        $orderError = "Please select a valid payment method.";
-    } elseif (
-        $fulfillment === 'delivery' &&
-        ($street === '' || $barangay === '' || $city === '')
-    ) {
-        $orderError = "Please complete your delivery address.";
-    } elseif (
-        $payment === 'gcash' &&
-        $gcashReference === ''
-    ) {
-        $orderError = "Please enter your GCash reference number.";
+    if (empty($selectedIDs)) {
+        unset($_SESSION['checkout_selected_cart_ids']);
+        header('Location: cart.php');
+        exit;
     }
 
-    if ($orderError === '') {
-
-        $subtotal = 0;
-
-        foreach ($cart as $item) {
-            $subtotal +=
-                (float) ($item['price'] ?? 0) *
-                (int) ($item['quantity'] ?? 0);
-        }
-
-        $deliveryFee = ($fulfillment === 'delivery') ? 50 : 0;
-        $total = $subtotal + $deliveryFee;
-
-        $orderNumber = 'SC' . date('Ymd') . strtoupper(bin2hex(random_bytes(3)));
-
-        /* SAVE ORDER DETAILS */
-        $_SESSION['order_details'] = [
-            'order_number' => $orderNumber,
-            'order_date' => date('F d, Y h:i A'),
-            'full_name' => $fullName,
-            'phone' => $phone,
-            'email' => $email,
-            'fulfillment' => $fulfillment,
-            'payment_method' => strtoupper($payment),
-            'gcash_reference' => $gcashReference,
-            'street' => $street,
-            'barangay' => $barangay,
-            'city' => $city,
-            'instructions' => $instructions,
-            'subtotal' => $subtotal,
-            'delivery_fee' => $deliveryFee,
-            'total' => $total
-        ];
-
-        /* SAVE ORDERED PRODUCTS */
-        $_SESSION['ordered_items'] = $cart;
-
-        /* REMOVE PURCHASED PRODUCTS FROM CART */
-        foreach ($selectedIds as $id) {
-            unset($allCart[$id]);
-        }
-
-        $_SESSION['cart'] = $allCart;
-
-        unset($_SESSION['checkout_selected_ids']);
-
-        /* GO TO EXISTING CONFIRMATION PAGE */
-        header("Location: confirmation.php");
-        exit();
-    }
+    $_SESSION['checkout_selected_cart_ids'] = $selectedIDs;
 }
 
-/* RECEIVE SELECTED PRODUCTS FROM CART */
-elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
+$selectedIDs = $_SESSION['checkout_selected_cart_ids'] ?? [];
 
-    if (
-        empty($_POST['selected_ids']) ||
-        !is_array($_POST['selected_ids'])
-    ) {
-        header("Location: cart.php");
-        exit();
-    }
-
-    $selectedIds = array_unique(
-        array_filter(
-            array_map('intval', $_POST['selected_ids']),
-            function ($id) {
-                return $id > 0;
-            }
-        )
-    );
-
-    $_SESSION['checkout_selected_ids'] = $selectedIds;
+if (empty($selectedIDs) || !is_array($selectedIDs)) {
+    header('Location: cart.php');
+    exit;
 }
-
-/* GET SELECTED PRODUCT IDS */
-$selectedIds = $_SESSION['checkout_selected_ids'] ?? [];
-
-/* BUILD CHECKOUT CART */
-$cart = [];
-
-foreach ($selectedIds as $id) {
-    if (isset($allCart[$id])) {
-        $cart[$id] = $allCart[$id];
-    }
-}
-
-/* CHECK IF CART IS EMPTY */
-if (empty($cart)) {
-    unset($_SESSION['checkout_selected_ids']);
-    header("Location: cart.php");
-    exit();
-}
-
-/* CALCULATE SUBTOTAL */
-$subtotal = 0;
-
-foreach ($cart as $item) {
-    $price = (float) ($item['price'] ?? 0);
-    $quantity = (int) ($item['quantity'] ?? 0);
-
-    $subtotal += $price * $quantity;
-}
-
-$deliveryFee = 50;
 
 include('./admin/includes/header.php');
 include('./admin/includes/topbar.php');
@@ -175,563 +56,1143 @@ include('./admin/includes/topbar.php');
 
 <link rel="stylesheet" href="assets/css/checkout.css">
 
-<div class="checkout-container">
+<link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+>
 
-    <!-- PAGE HEADER -->
-    <div class="checkout-heading">
-        <h1>Complete Your Order</h1>
-        <p>Just a few more details before your sweet treats are yours.</p>
+<style>
+#deliveryMap {
+    width: 100%;
+    height: 380px;
+    border-radius: 14px;
+    margin-top: 12px;
+    border: 1px solid #ddd;
+    z-index: 1;
+}
 
-        <div class="checkout-progress">
-            <div class="progress-step completed">
-                <span>1</span>
-                <small>Cart</small>
+.map-description {
+    font-size: 14px;
+    color: #777;
+    margin-top: 5px;
+}
+
+.map-location-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.map-location-actions button {
+    padding: 10px 16px;
+    border: 1px solid #222;
+    border-radius: 8px;
+    background: white;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: 0.2s;
+}
+
+.map-location-actions button:hover {
+    background: #222;
+    color: white;
+}
+
+#selectedCoordinates {
+    display: block;
+    margin-top: 12px;
+    font-size: 13px;
+    color: #666;
+}
+
+#checkoutForm[hidden],
+#checkoutLoading[hidden],
+#checkoutError[hidden],
+#checkoutEmpty[hidden] {
+    display: none !important;
+}
+
+@media (max-width: 600px) {
+    #deliveryMap {
+        height: 300px;
+    }
+
+    .map-location-actions button {
+        flex: 1;
+    }
+}
+</style>
+
+<main class="checkout-page">
+
+    <div class="checkout-container">
+
+        <header class="checkout-heading">
+
+            <span class="checkout-eyebrow">
+                SWEET! • ALMOST THERE
+            </span>
+
+            <h1>Complete Your Order</h1>
+
+            <p>
+                Review your selected pastries and provide your delivery details.
+            </p>
+
+            <div class="checkout-progress" aria-label="Checkout progress">
+
+                <div class="progress-step completed">
+                    <span>✓</span>
+                    <small>Cart</small>
+                </div>
+
+                <div class="progress-line active"></div>
+
+                <div class="progress-step current">
+                    <span>2</span>
+                    <small>Checkout</small>
+                </div>
+
+                <div class="progress-line"></div>
+
+                <div class="progress-step">
+                    <span>3</span>
+                    <small>Confirmation</small>
+                </div>
+
             </div>
 
-            <div class="progress-line active"></div>
+        </header>
 
-            <div class="progress-step current">
-                <span>2</span>
-                <small>Checkout</small>
-            </div>
-
-            <div class="progress-line"></div>
-
-            <div class="progress-step">
-                <span>3</span>
-                <small>Confirmation</small>
-            </div>
+        <div id="checkoutLoading" class="checkout-message">
+            Loading your selected products...
         </div>
-    </div>
 
-    <?php if (!empty($orderError)) { ?>
-        <div class="checkout-error">
-            <?php echo htmlspecialchars($orderError, ENT_QUOTES, 'UTF-8'); ?>
-        </div>
-    <?php } ?>
+        <div
+            id="checkoutError"
+            class="checkout-message checkout-error"
+            hidden
+        ></div>
 
-    <?php if (empty($cart)) { ?>
+        <section id="checkoutEmpty" class="checkout-empty" hidden>
 
-        <div class="checkout-empty">
             <div class="empty-icon">♡</div>
-            <h3>Your cart is empty</h3>
-            <p>Add some delicious pastries before proceeding to checkout.</p>
-            <a href="order.php" class="checkout-main-btn">
-                Browse Products
+
+            <h3>No selected products found</h3>
+
+            <p>
+                Your selected cart items may have been removed.
+                Return to your cart and select products again.
+            </p>
+
+            <a href="cart.php" class="checkout-main-btn">
+                Return to Cart
             </a>
-        </div>
 
-    <?php } else { ?>
+        </section>
 
-    <form id="checkoutForm" method="POST" action="checkout.php">
-        <input type="hidden" name="action" value="place_order">
+        <form id="checkoutForm" hidden>
 
-        <div class="checkout-layout">
+            <div class="checkout-layout">
 
-            <!-- LEFT SIDE -->
-            <div class="checkout-main">
+                <!-- LEFT SIDE -->
 
-                <!-- CUSTOMER INFORMATION -->
-                <section class="checkout-card">
+                <div class="checkout-main">
 
-                    <div class="section-heading">
-                        <div class="section-icon">01</div>
-                        <div>
-                            <h3>Customer Information</h3>
-                            <p>Tell us who will receive the order.</p>
-                        </div>
-                    </div>
+                    <!-- DELIVERY INFORMATION -->
 
-                    <div class="form-grid">
+                    <section class="checkout-card">
 
-                        <div class="form-group">
-                            <label>Full Name</label>
-                            <input type="text"
-                                name="full_name"
-                                placeholder="Enter your full name"
-                                required>
-                        </div>
+                        <div class="section-heading">
 
-                        <div class="form-group">
-                            <label>Phone Number</label>
-                            <input type="tel"
-                                name="phone"
-                                placeholder="09XX XXX XXXX"
-                                required>
-                        </div>
+                            <div class="section-icon">01</div>
 
-                        <div class="form-group full-width">
-                            <label>Email Address</label>
-                            <input type="email"
-                                name="email"
-                                placeholder="Enter your email address"
-                                required>
-                        </div>
-
-                    </div>
-
-                </section>
-
-                <!-- FULFILLMENT -->
-                <section class="checkout-card">
-
-                    <div class="section-heading">
-                        <div class="section-icon">02</div>
-                        <div>
-                            <h3>Delivery Method</h3>
-                            <p>How would you like to receive your order?</p>
-                        </div>
-                    </div>
-
-                    <div class="choice-grid">
-
-                        <label class="choice-card selected">
-                            <input type="radio"
-                                name="fulfillment"
-                                value="delivery"
-                                checked>
-
-                            <span class="choice-icon">🚚</span>
-
-                            <span class="choice-content">
-                                <strong>Home Delivery</strong>
-                                <small>Have your order delivered to you.</small>
-                            </span>
-
-                            <span class="choice-check">✓</span>
-                        </label>
-
-                        <label class="choice-card">
-                            <input type="radio"
-                                name="fulfillment"
-                                value="pickup">
-
-                            <span class="choice-icon">🏪</span>
-
-                            <span class="choice-content">
-                                <strong>Store Pickup</strong>
-                                <small>Pick up your order at our store.</small>
-                            </span>
-
-                            <span class="choice-check">✓</span>
-                        </label>
-
-                    </div>
-
-                    <div id="deliveryFields">
-
-                        <div class="form-grid address-grid">
-
-                            <div class="form-group full-width">
-                                <label>Street / House Number</label>
-                                <input type="text"
-                                    name="street"
-                                    placeholder="House number, street name">
-                            </div>
-
-                            <div class="form-group">
-                                <label>Barangay</label>
-                                <input type="text"
-                                    name="barangay"
-                                    placeholder="Enter barangay">
-                            </div>
-
-                            <div class="form-group">
-                                <label>City / Municipality</label>
-                                <input type="text"
-                                    name="city"
-                                    placeholder="Enter city">
-                            </div>
-
-                            <div class="form-group full-width">
-                                <label>Delivery Instructions <span>(Optional)</span></label>
-                                <textarea name="instructions"
-                                    rows="3"
-                                    placeholder="Landmarks or additional instructions..."></textarea>
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                    <div id="pickupNotice" class="pickup-notice" hidden>
-                        <span>♡</span>
-                        <div>
-                            <strong>Store Pickup Selected</strong>
-                            <p>You can collect your order at our store. Store location and pickup schedule will be provided with your order details.</p>
-                        </div>
-                    </div>
-
-                </section>
-
-                <!-- PAYMENT METHOD -->
-                <section class="checkout-card">
-
-                    <div class="section-heading">
-                        <div class="section-icon">03</div>
-                        <div>
-                            <h3>Payment Method</h3>
-                            <p>Choose how you want to pay.</p>
-                        </div>
-                    </div>
-
-                    <div class="payment-options">
-
-                        <label class="payment-option selected">
-                            <input type="radio"
-                                name="payment"
-                                value="cod"
-                                checked>
-
-                            <span class="payment-symbol">₱</span>
-
-                            <span class="payment-details">
-                                <strong>Cash on Delivery</strong>
-                                <small>Pay when your order arrives.</small>
-                            </span>
-
-                            <span class="choice-check">✓</span>
-                        </label>
-
-                        <label class="payment-option">
-                            <input type="radio"
-                                name="payment"
-                                value="gcash">
-
-                            <span class="gcash-symbol">G</span>
-
-                            <span class="payment-details">
-                                <strong>GCash</strong>
-                                <small>Pay using your GCash account.</small>
-                            </span>
-
-                            <span class="choice-check">✓</span>
-                        </label>
-
-                    </div>
-
-                    <div id="gcashDetails" class="gcash-details" hidden>
-
-                        <div class="gcash-header">
-                            <span class="gcash-symbol">G</span>
                             <div>
-                                <strong>GCash Payment</strong>
-                                <p>GCash payment instructions</p>
+                                <h3>Delivery Information</h3>
+                                <p>Where should we deliver your order?</p>
                             </div>
+
                         </div>
 
-                        <p class="gcash-placeholder">
-                            GCash number and QR code will be displayed here once the store payment details are configured.
+                        <div class="form-grid">
+
+                            <div class="form-group full-width">
+
+                                <label for="checkoutAddress">
+                                    Complete Delivery Address
+                                </label>
+
+                                <textarea
+                                    id="checkoutAddress"
+                                    name="address"
+                                    rows="4"
+                                    placeholder="House number, street, barangay, city / municipality"
+                                    required
+                                    maxlength="1000"
+                                ></textarea>
+
+                            </div>
+
+                            <div class="form-group full-width">
+
+                                <label for="checkoutPhone">
+                                    Contact Number
+                                </label>
+
+                                <input
+                                    type="tel"
+                                    id="checkoutPhone"
+                                    name="phone"
+                                    placeholder="09XX XXX XXXX"
+                                    maxlength="20"
+                                    required
+                                >
+
+                            </div>
+
+                            <!-- MAP LOCATION -->
+
+                            <div class="form-group full-width">
+
+                                <label>
+                                    Pin Your Delivery Location
+                                </label>
+
+                                <p class="map-description">
+                                    Select your exact delivery location.
+                                    Click anywhere on the map or drag the pin.
+                                </p>
+
+                                <div id="deliveryMap"></div>
+
+                                <div class="map-location-actions">
+
+                                    <button
+                                        type="button"
+                                        id="useCurrentLocation"
+                                    >
+                                        📍 Use My Current Location
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        id="resetMapLocation"
+                                    >
+                                        Reset Map
+                                    </button>
+
+                                </div>
+
+                                <small id="selectedCoordinates">
+                                    No delivery location selected yet.
+                                </small>
+
+                                <input type="hidden" id="deliveryLatitude">
+                                <input type="hidden" id="deliveryLongitude">
+
+                            </div>
+
+                        </div>
+
+                    </section>
+
+                    <!-- PAYMENT METHOD -->
+
+                    <section class="checkout-card">
+
+                        <div class="section-heading">
+
+                            <div class="section-icon">02</div>
+
+                            <div>
+                                <h3>Payment Method</h3>
+                                <p>Choose how you want to pay for your order.</p>
+                            </div>
+
+                        </div>
+
+                        <div class="payment-options">
+
+                            <label class="payment-option selected">
+
+                                <input
+                                    type="radio"
+                                    name="payment_method"
+                                    value="Cash"
+                                    checked
+                                >
+
+                                <span class="payment-symbol">₱</span>
+
+                                <span class="payment-details">
+                                    <strong>Cash on Delivery</strong>
+                                    <small>Pay when your order arrives.</small>
+                                </span>
+
+                                <span class="choice-check">✓</span>
+
+                            </label>
+
+                            <label class="payment-option">
+
+                                <input
+                                    type="radio"
+                                    name="payment_method"
+                                    value="GCash"
+                                >
+
+                                <span class="gcash-symbol">G</span>
+
+                                <span class="payment-details">
+                                    <strong>GCash</strong>
+                                    <small>Choose GCash as your payment method.</small>
+                                </span>
+
+                                <span class="choice-check">✓</span>
+
+                            </label>
+
+                        </div>
+
+                        <div class="gcash-note" id="gcashNote" hidden>
+                            GCash is recorded as your selected payment method.
+                            Payment processing or QR-code verification is not
+                            integrated yet.
+                        </div>
+
+                    </section>
+
+                </div>
+
+                <!-- RIGHT SIDE: ORDER SUMMARY -->
+
+                <aside class="checkout-sidebar">
+
+                    <div class="summary-card">
+
+                        <div class="summary-heading">
+
+                            <div>
+                                <span class="checkout-eyebrow">
+                                    YOUR SELECTED ITEMS
+                                </span>
+
+                                <h3>Order Summary</h3>
+                            </div>
+
+                            <a href="cart.php">Edit Cart</a>
+
+                        </div>
+
+                        <div
+                            id="summaryProducts"
+                            class="summary-products"
+                        ></div>
+
+                        <div class="summary-divider"></div>
+
+                        <div class="summary-row">
+                            <span>Selected Items</span>
+                            <strong id="summaryCount">0</strong>
+                        </div>
+
+                        <div class="summary-row">
+                            <span>Subtotal</span>
+                            <strong id="summarySubtotal">₱0.00</strong>
+                        </div>
+
+                        <div class="summary-row">
+                            <span>VAT (12%)</span>
+                            <strong id="summaryTax">₱0.00</strong>
+                        </div>
+
+                        <div class="summary-divider"></div>
+
+                        <div class="summary-total">
+                            <span>Total</span>
+                            <strong id="summaryTotal">₱0.00</strong>
+                        </div>
+
+                        <button
+                            type="submit"
+                            id="placeOrderButton"
+                            class="place-order-btn"
+                        >
+                            Place Order <span>→</span>
+                        </button>
+
+                        <p class="summary-note">
+                            Your final order total is verified by the server.
                         </p>
 
-                        <div class="form-group">
-                            <label>GCash Reference Number</label>
-                            <input type="text"
-                                name="gcash_reference"
-                                placeholder="Enter reference number">
-                        </div>
-
                     </div>
 
-                </section>
+                </aside>
 
             </div>
 
-            <!-- RIGHT SIDE: ORDER SUMMARY -->
-            <aside class="checkout-sidebar">
-
-                <div class="summary-card">
-
-                    <div class="summary-heading">
-                        <div>
-                            <span class="checkout-eyebrow">YOUR ORDER</span>
-                            <h3>Order Summary</h3>
-                        </div>
-
-                        <a href="cart.php">Edit Cart</a>
-                    </div>
-
-                    <div class="summary-products">
-
-                        <?php foreach ($cart as $id => $item) {
-
-                            $itemPrice = (float) ($item['price'] ?? 0);
-                            $itemQuantity = (int) ($item['quantity'] ?? 0);
-                            $itemTotal = $itemPrice * $itemQuantity;
-
-                            $image = basename($item['img'] ?? '');
-                        ?>
-
-                            <div class="summary-product">
-
-                                <div class="summary-image">
-                                    <img
-                                        src="assets/product_img/<?php echo htmlspecialchars($image, ENT_QUOTES, 'UTF-8'); ?>"
-                                        alt="<?php echo htmlspecialchars($item['name'] ?? 'Product', ENT_QUOTES, 'UTF-8'); ?>">
-                                    <span><?php echo $itemQuantity; ?></span>
-                                </div>
-
-                                <div class="summary-product-info">
-                                    <strong>
-                                        <?php echo htmlspecialchars($item['name'] ?? 'Product', ENT_QUOTES, 'UTF-8'); ?>
-                                    </strong>
-                                    <small>₱<?php echo number_format($itemPrice, 2); ?> each</small>
-                                </div>
-
-                                <strong class="summary-price">
-                                    ₱<?php echo number_format($itemTotal, 2); ?>
-                                </strong>
-
-                            </div>
-
-                        <?php } ?>
-
-                    </div>
-
-                    <div class="summary-divider"></div>
-
-                    <div class="summary-row">
-                        <span>Subtotal</span>
-                        <strong>₱<?php echo number_format($subtotal, 2); ?></strong>
-                    </div>
-
-                    <div class="summary-row">
-                        <span>Delivery Fee</span>
-                        <strong id="deliveryFee">
-                            ₱<?php echo number_format($deliveryFee, 2); ?>
-                        </strong>
-                    </div>
-
-                    <div class="summary-divider"></div>
-
-                    <div class="summary-total">
-                        <span>Total</span>
-                        <strong id="grandTotal">
-                            ₱<?php echo number_format($subtotal + $deliveryFee, 2); ?>
-                        </strong>
-                    </div>
-
-                    <button type="submit" class="place-order-btn">
-                        Place Order
-                    </button>
-
-                    <p class="summary-note">
-                        ♡ Thank you for choosing SweetClaire!
-                    </p>
-
-                </div>
-
-            </aside>
-
-        </div>
-
-    </form>
-
-    <!-- ORDER CONFIRMATION MODAL -->
-    <div
-        class="modal fade order-confirm-modal"
-        id="orderConfirmModal"
-        tabindex="-1"
-        aria-hidden="true"
-    >
-
-        <div class="modal-dialog modal-dialog-centered">
-
-            <div class="modal-content">
-
-                <div class="modal-body text-center">
-
-                    <div class="remove-icon">
-                        <i class="fas fa-shopping-bag"></i>
-                    </div>
-
-                    <div class="remove-heart">
-                        <i class="fas fa-heart"></i>
-                    </div>
-
-                    <h4 class="remove-title">Confirm Your Order?</h4>
-
-                    <p class="remove-message">
-                        Are you sure you want to place your order?
-                        Please double-check your information and order details
-                        before continuing.
-                    </p>
-
-                    <div class="remove-actions">
-
-                        <button
-                            type="button"
-                            class="btn keep-item-btn"
-                            data-bs-dismiss="modal"
-                        >
-                            Go Back
-                        </button>
-
-                        <button
-                            type="button"
-                            class="btn confirm-remove-btn"
-                            id="confirmOrder"
-                        >
-                            Yes, Place Order
-                        </button>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-        </div>
+        </form>
 
     </div>
 
-    <?php } ?>
+</main>
 
-</div>
-
-<!-- BOOTSTRAP JS -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
+
 document.addEventListener("DOMContentLoaded", function () {
 
-    const fulfillmentOptions = document.querySelectorAll('input[name="fulfillment"]');
-    const paymentOptions = document.querySelectorAll('input[name="payment"]');
+    // ==========================================
+    // CONFIGURATION
+    // ==========================================
 
-    const deliveryFields = document.getElementById("deliveryFields");
-    const pickupNotice = document.getElementById("pickupNotice");
+    const API_URL = "http://localhost:3000";
 
-    const gcashDetails = document.getElementById("gcashDetails");
+    const selectedCartIDs = <?php
+        echo json_encode(
+            array_values($selectedIDs),
+            JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP
+        );
+    ?>;
 
-    const deliveryFeeElement = document.getElementById("deliveryFee");
-    const grandTotalElement = document.getElementById("grandTotal");
+    // Initial map location: Bislig area.
+    // Change this to your actual shop's service area.
+    const defaultLocation = [8.8794, 125.0726];
 
-    const checkoutForm = document.getElementById("checkoutForm");
+    // ==========================================
+    // HTML ELEMENTS
+    // ==========================================
 
-    if (!checkoutForm) return;
+    const loading = document.getElementById("checkoutLoading");
+    const errorBox = document.getElementById("checkoutError");
+    const emptyBox = document.getElementById("checkoutEmpty");
 
-    const subtotal = <?php echo json_encode($subtotal); ?>;
-    const deliveryFee = <?php echo json_encode($deliveryFee); ?>;
+    const form = document.getElementById("checkoutForm");
 
+    const placeOrderButton =
+        document.getElementById("placeOrderButton");
 
-    /* =====================================
-       ORDER CONFIRMATION MODAL
-    ====================================== */
+    const summaryProducts =
+        document.getElementById("summaryProducts");
 
-    const orderModalElement = document.getElementById("orderConfirmModal");
+    const addressInput =
+        document.getElementById("checkoutAddress");
 
-    const orderModal = new bootstrap.Modal(orderModalElement);
+    const phoneInput =
+        document.getElementById("checkoutPhone");
 
-    const confirmOrder = document.getElementById("confirmOrder");
+    const latitudeInput =
+        document.getElementById("deliveryLatitude");
 
+    const longitudeInput =
+        document.getElementById("deliveryLongitude");
 
-    /* SHOW POPUP AFTER FORM VALIDATION */
+    const coordinatesLabel =
+        document.getElementById("selectedCoordinates");
 
-    checkoutForm.addEventListener("submit", function (event) {
+    const useCurrentLocationButton =
+        document.getElementById("useCurrentLocation");
+
+    const resetMapButton =
+        document.getElementById("resetMapLocation");
+
+    // ==========================================
+    // VARIABLES
+    // ==========================================
+
+    let selectedCartItems = [];
+    let deliveryMap = null;
+    let deliveryMarker = null;
+
+    // ==========================================
+    // PRICE FORMATTER
+    // ==========================================
+
+    function formatPrice(value) {
+
+        return Number(value).toLocaleString("en-PH", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+
+    }
+
+    // ==========================================
+    // API REQUEST
+    // ==========================================
+
+    async function apiRequest(endpoint, options = {}) {
+
+        const response = await fetch(API_URL + endpoint, {
+
+            ...options,
+
+            credentials: "include",
+
+            headers: {
+                "Accept": "application/json",
+                ...(options.headers || {})
+            }
+
+        });
+
+        const responseText = await response.text();
+
+        let data;
+
+        try {
+            data = JSON.parse(responseText);
+        } catch (error) {
+
+            console.error("Server response:", responseText);
+
+            throw new Error(
+                "The server returned an invalid response. Check your Node.js server."
+            );
+
+        }
+
+        if (response.status === 401) {
+
+            window.location.href = "/SoftEcoms/public/login.php";
+
+            throw new Error("Please log in first.");
+
+        }
+
+        if (!response.ok || data.success === false) {
+
+            throw new Error(
+                data.message || "Something went wrong."
+            );
+
+        }
+
+        return data;
+
+    }
+
+    // ==========================================
+    // DELIVERY MAP
+    // ==========================================
+
+    function initializeDeliveryMap() {
+
+        if (deliveryMap) return;
+
+        deliveryMap = L.map("deliveryMap").setView(
+            defaultLocation,
+            14
+        );
+
+        L.tileLayer(
+            "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+            {
+                maxZoom: 19,
+                attribution:
+                    '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            }
+        ).addTo(deliveryMap);
+
+        deliveryMap.on("click", function (event) {
+
+            setDeliveryLocation(
+                event.latlng.lat,
+                event.latlng.lng
+            );
+
+        });
+
+        setTimeout(function () {
+            deliveryMap.invalidateSize();
+        }, 200);
+
+    }
+
+    // ==========================================
+    // SET DELIVERY LOCATION
+    // ==========================================
+
+    function setDeliveryLocation(lat, lng) {
+
+        latitudeInput.value = Number(lat).toFixed(8);
+        longitudeInput.value = Number(lng).toFixed(8);
+
+        coordinatesLabel.textContent =
+            "Selected location: " +
+            Number(lat).toFixed(6) +
+            ", " +
+            Number(lng).toFixed(6);
+
+        coordinatesLabel.style.color = "#198754";
+
+        if (!deliveryMarker) {
+
+            deliveryMarker = L.marker(
+                [lat, lng],
+                { draggable: true }
+            ).addTo(deliveryMap);
+
+            deliveryMarker.bindPopup("Your delivery location");
+
+            deliveryMarker.on("dragend", function () {
+
+                const position = deliveryMarker.getLatLng();
+
+                setDeliveryLocation(
+                    position.lat,
+                    position.lng
+                );
+
+            });
+
+        } else {
+
+            deliveryMarker.setLatLng([lat, lng]);
+
+        }
+
+        deliveryMap.setView([lat, lng], 17);
+
+    }
+
+    // ==========================================
+    // CURRENT LOCATION
+    // ==========================================
+
+    useCurrentLocationButton.addEventListener("click", function () {
+
+        if (!navigator.geolocation) {
+
+            Swal.fire(
+                "Unavailable",
+                "Your browser does not support location services.",
+                "warning"
+            );
+
+            return;
+
+        }
+
+        useCurrentLocationButton.disabled = true;
+        useCurrentLocationButton.textContent = "Getting Location...";
+
+        navigator.geolocation.getCurrentPosition(
+
+            function (position) {
+
+                setDeliveryLocation(
+                    position.coords.latitude,
+                    position.coords.longitude
+                );
+
+                useCurrentLocationButton.disabled = false;
+                useCurrentLocationButton.textContent =
+                    "📍 Use My Current Location";
+
+            },
+
+            function (error) {
+
+                console.error("Geolocation error:", error);
+
+                Swal.fire(
+                    "Location Unavailable",
+                    "Please allow location access in your browser or select your location manually on the map.",
+                    "warning"
+                );
+
+                useCurrentLocationButton.disabled = false;
+                useCurrentLocationButton.textContent =
+                    "📍 Use My Current Location";
+
+            },
+
+            {
+                enableHighAccuracy: true,
+                timeout: 15000,
+                maximumAge: 0
+            }
+
+        );
+
+    });
+
+    // ==========================================
+    // RESET MAP
+    // ==========================================
+
+    resetMapButton.addEventListener("click", function () {
+
+        latitudeInput.value = "";
+        longitudeInput.value = "";
+
+        coordinatesLabel.textContent =
+            "No delivery location selected yet.";
+
+        coordinatesLabel.style.color = "#666";
+
+        if (deliveryMarker) {
+
+            deliveryMap.removeLayer(deliveryMarker);
+            deliveryMarker = null;
+
+        }
+
+        deliveryMap.setView(defaultLocation, 14);
+
+    });
+
+    // ==========================================
+    // PAYMENT METHOD
+    // ==========================================
+
+    function updatePaymentSelection() {
+
+        document.querySelectorAll(".payment-option").forEach(option => {
+
+            const radio = option.querySelector(
+                'input[type="radio"]'
+            );
+
+            option.classList.toggle(
+                "selected",
+                radio.checked
+            );
+
+        });
+
+        const payment = document.querySelector(
+            'input[name="payment_method"]:checked'
+        )?.value;
+
+        document.getElementById("gcashNote").hidden =
+            payment !== "GCash";
+
+    }
+
+    document.querySelectorAll(
+        'input[name="payment_method"]'
+    ).forEach(radio => {
+
+        radio.addEventListener("change", updatePaymentSelection);
+
+    });
+
+    // ==========================================
+    // RENDER ORDER SUMMARY
+    // ==========================================
+
+    function renderSummary() {
+
+        summaryProducts.innerHTML = "";
+
+        let subtotalCents = 0;
+        let totalQuantity = 0;
+
+        selectedCartItems.forEach(item => {
+
+            const priceCents =
+                Math.round(Number(item.price) * 100);
+
+            const quantity = Number(item.quantity);
+
+            subtotalCents += priceCents * quantity;
+            totalQuantity += quantity;
+
+            const product = document.createElement("div");
+            product.className = "summary-product";
+
+            const imageWrap = document.createElement("div");
+            imageWrap.className = "summary-image";
+
+            const image = document.createElement("img");
+
+            image.src =
+                "assets/product_img/" +
+                encodeURIComponent(item.img || "");
+
+            image.alt = item.productName || "Product";
+
+            image.onerror = function () {
+                this.style.visibility = "hidden";
+            };
+
+            const quantityBadge = document.createElement("span");
+            quantityBadge.textContent = quantity;
+
+            imageWrap.append(image, quantityBadge);
+
+            const info = document.createElement("div");
+            info.className = "summary-product-info";
+
+            const name = document.createElement("strong");
+            name.textContent = item.productName || "Product";
+
+            const each = document.createElement("small");
+            each.textContent =
+                "₱" + formatPrice(item.price) + " each";
+
+            info.append(name, each);
+
+            const lineTotal = document.createElement("strong");
+            lineTotal.className = "summary-price";
+
+            lineTotal.textContent =
+                "₱" + formatPrice(
+                    priceCents * quantity / 100
+                );
+
+            product.append(imageWrap, info, lineTotal);
+
+            summaryProducts.appendChild(product);
+
+        });
+
+        const taxCents = Math.round(subtotalCents * 0.12);
+        const totalCents = subtotalCents + taxCents;
+
+        document.getElementById("summaryCount").textContent =
+            totalQuantity;
+
+        document.getElementById("summarySubtotal").textContent =
+            "₱" + formatPrice(subtotalCents / 100);
+
+        document.getElementById("summaryTax").textContent =
+            "₱" + formatPrice(taxCents / 100);
+
+        document.getElementById("summaryTotal").textContent =
+            "₱" + formatPrice(totalCents / 100);
+
+    }
+
+    // ==========================================
+    // LOAD SELECTED PRODUCTS
+    // ==========================================
+
+    async function loadSelectedItems() {
+
+        try {
+
+            if (
+                !Array.isArray(selectedCartIDs) ||
+                selectedCartIDs.length === 0
+            ) {
+
+                loading.hidden = true;
+                emptyBox.hidden = false;
+
+                return;
+
+            }
+
+            const data = await apiRequest("/cart");
+
+            const allItems = Array.isArray(data.cart)
+                ? data.cart
+                : [];
+
+            const selectedSet = new Set(
+                selectedCartIDs.map(Number)
+            );
+
+            selectedCartItems = allItems.filter(item =>
+                selectedSet.has(Number(item.cartID))
+            );
+
+            loading.hidden = true;
+
+            if (
+                selectedCartItems.length === 0 ||
+                selectedCartItems.length !== selectedSet.size
+            ) {
+
+                emptyBox.hidden = false;
+                return;
+
+            }
+
+            renderSummary();
+
+            form.hidden = false;
+
+            initializeDeliveryMap();
+
+            updatePaymentSelection();
+
+        } catch (error) {
+
+            console.error("Checkout loading error:", error);
+
+            loading.hidden = true;
+            errorBox.textContent = error.message;
+            errorBox.hidden = false;
+
+        }
+
+    }
+
+    // ==========================================
+    // PLACE ORDER
+    // ==========================================
+
+    form.addEventListener("submit", async function (event) {
 
         event.preventDefault();
 
-        orderModal.show();
+        if (selectedCartItems.length === 0) {
 
-    });
-
-
-    /* CONFIRM ORDER */
-
-    confirmOrder.addEventListener("click", function () {
-
-        confirmOrder.disabled = true;
-        confirmOrder.textContent = "Processing...";
-
-        /*
-           Submit the form directly.
-           This continues your existing PHP order processing
-           and redirects to confirmation.php.
-        */
-
-        checkoutForm.submit();
-
-    });
-
-
-    /* =====================================
-       DELIVERY AND PICKUP
-    ====================================== */
-
-    function updateFulfillment() {
-
-        const selected = document.querySelector('input[name="fulfillment"]:checked');
-
-        const isDelivery = selected && selected.value === "delivery";
-
-        deliveryFields.hidden = !isDelivery;
-        pickupNotice.hidden = isDelivery;
-
-        deliveryFields.querySelectorAll("input").forEach(input => {
-            input.required = isDelivery;
-        });
-
-        deliveryFeeElement.textContent = isDelivery
-            ? "₱" + deliveryFee.toFixed(2)
-            : "₱0.00";
-
-        const total = subtotal + (isDelivery ? deliveryFee : 0);
-
-        grandTotalElement.textContent = "₱" + total.toFixed(2);
-
-        document.querySelectorAll(".choice-card").forEach(card => {
-            card.classList.toggle(
-                "selected",
-                card.querySelector("input").checked
+            Swal.fire(
+                "No selected products",
+                "Return to your cart and select products first.",
+                "warning"
             );
-        });
 
-    }
+            return;
 
+        }
 
-    /* =====================================
-       PAYMENT METHOD
-    ====================================== */
+        const address = addressInput.value.trim();
+        const phone = phoneInput.value.trim();
 
-    function updatePayment() {
+        const paymentMethod = document.querySelector(
+            'input[name="payment_method"]:checked'
+        )?.value;
 
-        const selected = document.querySelector('input[name="payment"]:checked');
+        const latitude = latitudeInput.value;
+        const longitude = longitudeInput.value;
 
-        const isGcash = selected && selected.value === "gcash";
+        // VALIDATE ADDRESS
 
-        gcashDetails.hidden = !isGcash;
+        if (!address) {
 
-        const referenceInput = gcashDetails.querySelector("input");
-
-        referenceInput.required = isGcash;
-
-        document.querySelectorAll(".payment-option").forEach(option => {
-            option.classList.toggle(
-                "selected",
-                option.querySelector("input").checked
+            Swal.fire(
+                "Address Required",
+                "Please enter your complete delivery address.",
+                "warning"
             );
+
+            return;
+
+        }
+
+        // VALIDATE PHONE
+
+        if (!phone) {
+
+            Swal.fire(
+                "Contact Number Required",
+                "Please enter your contact number.",
+                "warning"
+            );
+
+            return;
+
+        }
+
+        // VALIDATE PAYMENT
+
+        if (!paymentMethod) {
+
+            Swal.fire(
+                "Payment Required",
+                "Please select a payment method.",
+                "warning"
+            );
+
+            return;
+
+        }
+
+        // VALIDATE MAP
+
+        if (!latitude || !longitude) {
+
+            Swal.fire(
+                "Location Required",
+                "Please select your delivery location on the map.",
+                "warning"
+            );
+
+            return;
+
+        }
+
+        const confirmation = await Swal.fire({
+
+            title: "Place your order?",
+
+            text:
+                "Please confirm that your selected products and delivery details are correct.",
+
+            icon: "question",
+
+            showCancelButton: true,
+
+            confirmButtonText: "Place Order",
+
+            cancelButtonText: "Review Order"
+
         });
 
-    }
+        if (!confirmation.isConfirmed) return;
 
+        placeOrderButton.disabled = true;
+        placeOrderButton.textContent = "Processing Order...";
 
-    /* =====================================
-       EVENT LISTENERS
-    ====================================== */
+        try {
 
-    fulfillmentOptions.forEach(option => {
-        option.addEventListener("change", updateFulfillment);
+            // SEND ORDER TO NODE.JS
+
+            const result = await apiRequest("/checkout", {
+
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json"
+                },
+
+                body: JSON.stringify({
+
+                    address: address,
+
+                    phone: phone,
+
+                    latitude: Number(latitude),
+
+                    longitude: Number(longitude),
+
+                    payment_method: paymentMethod,
+
+                    selected_cart_ids: selectedCartItems.map(
+                        item => Number(item.cartID)
+                    )
+
+                })
+
+            });
+
+            // VALIDATE NODE RESPONSE
+
+            if (!result.order || !result.order.orderNumber) {
+
+                throw new Error(
+                    "The order was processed, but the server returned incomplete receipt information. Contact the store before attempting another checkout."
+                );
+
+            }
+
+            // SAVE RECEIPT IN PHP SESSION
+
+            const confirmationResponse = await fetch(
+                "confirmation.php",
+                {
+
+                    method: "POST",
+
+                    credentials: "same-origin",
+
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Accept": "application/json"
+                    },
+
+                    body: JSON.stringify({
+                        order: result.order
+                    })
+
+                }
+            );
+
+            const confirmationData =
+                await confirmationResponse.json();
+
+            if (
+                !confirmationResponse.ok ||
+                !confirmationData.success
+            ) {
+
+                throw new Error(
+                    "Your order was placed, but the receipt could not be prepared. Order number: " +
+                    result.order.orderNumber
+                );
+
+            }
+
+            // CLEAR PHP CHECKOUT SELECTION
+
+            try {
+
+                await fetch(
+                    "checkout.php?clear_selection=1",
+                    {
+                        credentials: "same-origin"
+                    }
+                );
+
+            } catch (error) {
+
+                console.error(
+                    "Unable to clear PHP checkout selection:",
+                    error
+                );
+
+            }
+
+            // SUCCESS
+
+            await Swal.fire({
+
+                icon: "success",
+
+                title: "Order Placed!",
+
+                text: "Your order has been successfully placed.",
+
+                confirmButtonText: "View Confirmation",
+
+                allowOutsideClick: false
+
+            });
+
+            // REDIRECT TO RECEIPT
+
+            window.location.href = "confirmation.php";
+
+        } catch (error) {
+
+            console.error("Checkout error:", error);
+
+            Swal.fire(
+                "Checkout Notice",
+                error.message,
+                "error"
+            );
+
+            placeOrderButton.disabled = false;
+
+            placeOrderButton.innerHTML =
+                'Place Order <span>→</span>';
+
+        }
+
     });
 
-    paymentOptions.forEach(option => {
-        option.addEventListener("change", updatePayment);
-    });
+    // ==========================================
+    // INITIALIZE
+    // ==========================================
 
+    updatePaymentSelection();
 
-    /* INITIALIZE */
-
-    updateFulfillment();
-    updatePayment();
+    loadSelectedItems();
 
 });
+
 </script>
+
+</body>
+</html>
