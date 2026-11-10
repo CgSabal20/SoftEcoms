@@ -10,7 +10,8 @@ class CheckoutController {
     let connection;
 
     try {
-   n
+      // STEP 1: VERIFY CUSTOMER SESSION
+
       if (!req.session?.authUser || !req.session.user_id) {
         return res.status(401).json({
           success: false,
@@ -34,10 +35,16 @@ class CheckoutController {
         });
       }
 
+      // STEP 2: VALIDATE CHECKOUT INFORMATION
 
       const address = String(req.body.address || "").trim();
       const contactNumber = String(req.body.phone || "").trim();
       const paymentMethod = String(req.body.payment_method || "").trim();
+
+      const latitude = Number(req.body.latitude);
+      const longitude = Number(req.body.longitude);
+
+      const selectedCartIDs = req.body.selected_cart_ids;
 
       if (!address) {
         return res.status(400).json({
@@ -67,18 +74,65 @@ class CheckoutController {
         });
       }
 
-      // STEP 3: Start database transaction
+      // VALIDATE MAP COORDINATES
+
+      if (
+        req.body.latitude === undefined ||
+        req.body.longitude === undefined ||
+        !Number.isFinite(latitude) ||
+        !Number.isFinite(longitude) ||
+        latitude < -90 ||
+        latitude > 90 ||
+        longitude < -180 ||
+        longitude > 180
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "Please select a valid delivery location on the map.",
+        });
+      }
+
+      // VALIDATE SELECTED CART IDS
+
+      if (!Array.isArray(selectedCartIDs) || selectedCartIDs.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Please select at least one product.",
+        });
+      }
+
+      const cartIDs = selectedCartIDs.map(Number);
+
+      if (cartIDs.some((id) => !Number.isSafeInteger(id) || id < 1)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid selected cart items.",
+        });
+      }
+
+      const uniqueCartIDs = [...new Set(cartIDs)];
+
+      if (uniqueCartIDs.length !== cartIDs.length) {
+        return res.status(400).json({
+          success: false,
+          message: "Duplicate cart items were submitted.",
+        });
+      }
+
+      // STEP 3: START DATABASE TRANSACTION
+
       connection = await this.db.getConnection();
 
       await connection.beginTransaction();
 
-      // Verify customer exists
+      // VERIFY CUSTOMER EXISTS
+
       const [customers] = await connection.execute(
         `SELECT id
-         FROM users
-         WHERE id = ?
-           AND role IN ('user', 'customer')
-         LIMIT 1`,
+                 FROM users
+                 WHERE id = ?
+                   AND role IN ('user', 'customer')
+                 LIMIT 1`,
         [userId],
       );
 
@@ -86,27 +140,38 @@ class CheckoutController {
         throw new Error("Customer account not found.");
       }
 
-      // STEP 4: Retrieve customer's cart
+      // STEP 4: RETRIEVE ONLY SELECTED CART PRODUCTS
+
+      const placeholders = uniqueCartIDs.map(() => "?").join(",");
+
       const [cartItems] = await connection.execute(
         `SELECT
-           cart.product_id,
-           cart.quantity,
-           product_item.productName,
-           product_item.price
-         FROM cart
-         INNER JOIN product_item
-           ON cart.product_id = product_item.id
-         WHERE cart.user_id = ?
-         FOR UPDATE`,
-        [userId],
+                    cart.id AS cartID,
+                    cart.product_id,
+                    cart.quantity,
+                    product_item.productName,
+                    product_item.price
+                 FROM cart
+                 INNER JOIN product_item
+                    ON cart.product_id = product_item.id
+                 WHERE cart.user_id = ?
+                   AND cart.id IN (${placeholders})
+                 FOR UPDATE`,
+        [userId, ...uniqueCartIDs],
       );
 
       if (cartItems.length === 0) {
-        throw new Error("Your cart is empty.");
+        throw new Error("No selected cart products were found.");
       }
 
-      // STEP 5: Calculate subtotal and VAT
-      // Use integer cents to avoid floating-point money errors.
+      if (cartItems.length !== uniqueCartIDs.length) {
+        throw new Error(
+          "Some selected products no longer exist in your cart. Please refresh your cart.",
+        );
+      }
+
+      // STEP 5: CALCULATE SUBTOTAL AND VAT
+
       let subtotalCents = 0;
 
       for (const item of cartItems) {
@@ -137,27 +202,30 @@ class CheckoutController {
       const tax = (taxCents / 100).toFixed(2);
       const totalPrice = (totalCents / 100).toFixed(2);
 
-      // STEP 6: Generate order identifiers
+      // STEP 6: GENERATE ORDER IDENTIFIERS
+
       const orderUUID = crypto.randomUUID();
 
-      // CO + 9 digits = 11 characters
       const orderNumber = "CO" + crypto.randomInt(100000000, 1000000000);
 
-      // STEP 7: Create order
+      // STEP 7: INSERT ORDER
+
       const [orderResult] = await connection.execute(
         `INSERT INTO orders (
-           uuid,
-           COnumber,
-           user_id,
-           totalPrice,
-           address,
-           contactNumber,
-           paymentMethod,
-           status,
-           subtotal,
-           tax
-         )
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    uuid,
+                    COnumber,
+                    user_id,
+                    totalPrice,
+                    address,
+                    contactNumber,
+                    paymentMethod,
+                    status,
+                    subtotal,
+                    tax,
+                    latitude,
+                    longitude
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           orderUUID,
           orderNumber,
@@ -169,21 +237,24 @@ class CheckoutController {
           "pending",
           subtotal,
           tax,
+          latitude,
+          longitude,
         ],
       );
 
       const orderId = orderResult.insertId;
 
-      // STEP 8: Insert order items
+      // STEP 8: INSERT ORDER ITEMS
+
       for (const item of cartItems) {
         await connection.execute(
           `INSERT INTO orderitems (
-             order_id,
-             product_id,
-             quantity,
-             price
-           )
-           VALUES (?, ?, ?, ?)`,
+                        order_id,
+                        product_id,
+                        quantity,
+                        price
+                    )
+                    VALUES (?, ?, ?, ?)`,
           [
             orderId,
             item.product_id,
@@ -193,19 +264,26 @@ class CheckoutController {
         );
       }
 
-      // STEP 9: Clear customer's cart
+      // STEP 9: DELETE ONLY SELECTED CART PRODUCTS
+
       await connection.execute(
         `DELETE FROM cart
-         WHERE user_id = ?`,
-        [userId],
+                 WHERE user_id = ?
+                   AND id IN (${placeholders})`,
+        [userId, ...uniqueCartIDs],
       );
 
-      // STEP 10: Commit transaction
+      // STEP 10: COMMIT TRANSACTION
+
       await connection.commit();
+
+      // STEP 11: RETURN ORDER DETAILS
 
       return res.status(201).json({
         success: true,
+
         message: "Your order has been placed successfully!",
+
         order: {
           id: orderId,
           uuid: orderUUID,
@@ -215,11 +293,17 @@ class CheckoutController {
           totalPrice,
           paymentMethod,
           status: "pending",
+          latitude,
+          longitude,
         },
       });
     } catch (error) {
       if (connection) {
-        await connection.rollback();
+        try {
+          await connection.rollback();
+        } catch (rollbackError) {
+          console.error("Checkout rollback error:", rollbackError);
+        }
       }
 
       console.error("Checkout error:", error);
