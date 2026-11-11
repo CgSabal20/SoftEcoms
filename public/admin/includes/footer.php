@@ -25,7 +25,7 @@
  
       <div class="col-md-4 mb-4">
         <h5>Get In Touch</h5>
-        <p>hello@eclairshop.com</p>
+        <p>hello@sweetclaire.com</p>
         <p>+63 912 345 6789</p>
         <div class="footer-social d-flex mt-3">
           <a href="#" aria-label="Facebook">FB</a>

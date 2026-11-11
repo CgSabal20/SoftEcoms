@@ -116,7 +116,7 @@ include('./admin/includes/topbar.php');
                 <div class="contact-form-row">
 
                     <div class="form-group">
-                        <label for="contactName">Your Name</label>
+                        <label for="contactName">Name</label>
                         <input
                             type="text"
                             id="contactName"
