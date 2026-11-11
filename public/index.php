@@ -113,11 +113,20 @@ function sweetProductImage($imageName)
 <section class="product" id="sweet-tooths">
     <div class="container py-5">
 
-        <div class="section-heading text-center py-4">
-            <h1 class="our_products">Sweet Tooths</h1>
-            <h6 class="section-subtitle">
-                Our Sweetest delivered at your Doorstep.
-            </h6>
+        <!-- SWEET TOOTHS HEADING + VIEW ALL -->
+        <div class="section-heading sweet-heading py-4">
+
+            <div class="sweet-heading-content">
+                <h1 class="our_products">Sweet Tooths</h1>
+                <h6 class="section-subtitle">
+                    Our Sweetest delivered at your Doorstep.
+                </h6>
+            </div>
+
+            <a href="/SoftEcoms/public/order.php" class="view-all-link">
+                View All <span>&gt;</span>
+            </a>
+
         </div>
 
         <?php if (!empty($sweetProducts)): ?>
@@ -208,12 +217,6 @@ function sweetProductImage($imageName)
             </p>
 
         <?php endif; ?>
-
-        <div class="text-center mt-4">
-            <a href="/SoftEcoms/public/order.php" class="btn2">
-                Click For More
-            </a>
-        </div>
 
     </div>
 </section>
@@ -383,7 +386,6 @@ function sweetProductImage($imageName)
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 
-
 <script>
 document.addEventListener("DOMContentLoaded", function () {
     const slider = document.getElementById("productSlider");
@@ -430,7 +432,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (!activeSlide || wrapperWidth === 0) return;
 
-
         const sidePadding = Math.max(
             0,
             (wrapperWidth - activeSlide.offsetWidth) / 2
@@ -445,7 +446,6 @@ document.addEventListener("DOMContentLoaded", function () {
         const offset = wrapperWidth / 2 - slideCenter;
 
         slider.style.transform = `translateX(${offset}px)`;
-
 
         slides.forEach(function (slide, index) {
             slide.classList.toggle("is-active", index === activeIndex);
@@ -508,7 +508,6 @@ document.addEventListener("DOMContentLoaded", function () {
 </script>
 
 
-
 <script>
 document.addEventListener("DOMContentLoaded", async function () {
     try {
@@ -519,7 +518,6 @@ document.addEventListener("DOMContentLoaded", async function () {
                 "Accept": "application/json"
             }
         });
-
 
         if (response.status === 401) {
             return;
@@ -539,11 +537,9 @@ document.addEventListener("DOMContentLoaded", async function () {
 
         const role = data.role || user.role;
 
-
         if (role !== "customer") {
             return;
         }
-
 
         const needsCompletion =
             typeof data.needsProfileCompletion === "boolean"
@@ -687,7 +683,6 @@ async function showProfileCompletion() {
             confirmButtonText: "Continue"
         });
 
-     
         window.location.reload();
 
     } catch (error) {
@@ -701,7 +696,6 @@ async function showProfileCompletion() {
     }
 }
 </script>
-
 
 
 <?php include __DIR__ . "/admin/includes/footer.php"; ?>

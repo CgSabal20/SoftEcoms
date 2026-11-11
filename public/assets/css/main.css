@@ -1,3 +1,4 @@
+
 /* =========================================================
    FONTS
 ========================================================= */
@@ -218,6 +219,62 @@
     text-align: center;
     letter-spacing: 1px;
     margin-top: 10px;
+}
+
+/* =========================================================
+   SWEET TOOTHS HEADING + VIEW ALL LINK
+========================================================= */
+
+.index-page .sweet-heading {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 110px;
+}
+
+.index-page .sweet-heading-content {
+    width: 100%;
+    text-align: center;
+}
+
+.index-page .sweet-heading .our_products,
+.index-page .sweet-heading .section-subtitle {
+    text-align: center;
+}
+
+.index-page .view-all-link {
+    position: absolute;
+    right: 10px;
+    top: 125%;
+    transform: translateY(-50%);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #D85C5C;
+    font-family: "Rubik", sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+
+    z-index: 10;
+    cursor: pointer;
+    pointer-events: auto;
+}
+
+.index-page .view-all-link span {
+    font-size: 19px;
+    transition: transform 0.3s ease;
+}
+
+.index-page .view-all-link:hover {
+    color: #F56C6C;
+}
+
+.index-page .view-all-link:hover span {
+    transform: translateX(5px);
 }
 
 /* =========================================================
@@ -859,6 +916,29 @@
         flex-direction: column;
         gap: 6px;
         text-align: center;
+    }
+
+    /* VIEW ALL LINK ON SMALL SCREENS */
+    .index-page .sweet-heading {
+        min-height: 100px;
+    }
+
+    .index-page .view-all-link {
+        right: 0;
+        font-size: 12px;
+        gap: 4px;
+    }
+
+    .index-page .view-all-link span {
+        font-size: 17px;
+    }
+
+    .index-page .sweet-heading .our_products {
+        font-size: 25px;
+    }
+
+    .index-page .sweet-heading .section-subtitle {
+        font-size: 0.8rem;
     }
 }
 
