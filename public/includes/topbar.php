@@ -4,11 +4,28 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-$current_page = basename(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH));
+// ==========================================
+// DETECT CURRENT PAGE
+// ==========================================
+
+$scriptPage = strtolower(
+    basename($_SERVER['SCRIPT_NAME'] ?? '')
+);
+
+$urlPage = strtolower(
+    basename(parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH))
+);
+
+// Use the actual PHP script filename, with URL fallback.
+$current_page = !empty($scriptPage) ? $scriptPage : $urlPage;
+
+$isHomePage = ($current_page === 'index.php');
+$isMenuPage = in_array($current_page, ['productpage.php', 'product.php'], true);
+$isContactPage = ($current_page === 'contactus.php');
+$isOrdersPage = ($current_page === 'order.php');
+$isAboutPage = ($current_page === 'aboutus.php');
 $isCartPage = ($current_page === 'cart.php');
 
-// The cart count comes from the Node.js API now.
-// Do not use $_SESSION['cart'] because the database is the source of truth.
 $cartCount = 0;
 ?>
 
@@ -56,46 +73,56 @@ $cartCount = 0;
 
                 <ul class="navbar-nav ms-lg-auto my-2 my-lg-0">
 
+                    <!-- HOME -->
                     <li class="nav-item">
                         <a
-                            class="nav-link <?= (!$isCartPage && $current_page === 'index.php') ? 'active' : '' ?>"
+                            class="nav-link <?= $isHomePage ? 'active' : '' ?>"
                             href="/SoftEcoms/public/index.php"
+                            <?= $isHomePage ? 'aria-current="page"' : '' ?>
                         >
                             Home
                         </a>
                     </li>
 
+                    <!-- MENU -->
                     <li class="nav-item">
                         <a
-                            class="nav-link <?= in_array($current_page, ['productpage.php', 'product.php']) ? 'active' : '' ?>"
+                            class="nav-link <?= $isMenuPage ? 'active' : '' ?>"
                             href="/SoftEcoms/public/productpage.php"
+                            <?= $isMenuPage ? 'aria-current="page"' : '' ?>
                         >
                             Menu
                         </a>
                     </li>
 
+                    <!-- CONTACT US -->
                     <li class="nav-item">
                         <a
-                            class="nav-link <?= $current_page === 'contactUs.php' ? 'active' : '' ?>"
+                            class="nav-link <?= $isContactPage ? 'active' : '' ?>"
                             href="/SoftEcoms/public/contactUs.php"
+                            <?= $isContactPage ? 'aria-current="page"' : '' ?>
                         >
                             Contact Us
                         </a>
                     </li>
 
+                    <!-- ORDERS -->
                     <li class="nav-item">
                         <a
-                            class="nav-link <?= $current_page === 'order.php' ? 'active' : '' ?>"
+                            class="nav-link <?= $isOrdersPage ? 'active' : '' ?>"
                             href="/SoftEcoms/public/order.php"
+                            <?= $isOrdersPage ? 'aria-current="page"' : '' ?>
                         >
                             Orders
                         </a>
                     </li>
 
+                    <!-- ABOUT -->
                     <li class="nav-item">
                         <a
-                            class="nav-link <?= $current_page === 'aboutUs.php' ? 'active' : '' ?>"
+                            class="nav-link <?= $isAboutPage ? 'active' : '' ?>"
                             href="/SoftEcoms/public/aboutUs.php"
+                            <?= $isAboutPage ? 'aria-current="page"' : '' ?>
                         >
                             About
                         </a>
@@ -230,7 +257,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
 
-    // Refresh the cart count on every page
+    // Refresh cart count on every page
     refreshCartCount();
 
 

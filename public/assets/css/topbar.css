@@ -1,3 +1,4 @@
+
 * {
     padding: 0;
     margin: 0;
@@ -25,7 +26,10 @@
     height: 36px;
 }
 
-/* NAVIGATION LINKS */
+/* ==========================================
+   NAVIGATION LINKS
+========================================== */
+
 .nav-link {
     margin-right: 10px;
     margin-left: 10px;
@@ -67,7 +71,10 @@
     font-weight: 600;
 }
 
-/* MOBILE NAVIGATION */
+/* ==========================================
+   MOBILE NAVIGATION
+========================================== */
+
 @media (max-width: 991px) {
     .navbar .nav-link::after {
         left: 0;
@@ -80,12 +87,18 @@
     }
 }
 
-/* NAVBAR COLLAPSE */
+/* ==========================================
+   NAVBAR COLLAPSE
+========================================== */
+
 .navbar-collapse {
     transition: height 0.35s ease;
 }
 
-/* NAVIGATION ICONS */
+/* ==========================================
+   NAVIGATION ICONS
+========================================== */
+
 .nav-icon {
     color: black !important;
     text-decoration: none !important;
@@ -101,13 +114,15 @@
 .nav-icon:focus,
 .nav-icon:active,
 .nav-icon:visited {
-    color: black !important;
     text-decoration: none !important;
     outline: none;
     box-shadow: none;
 }
 
-/* SHOPPING CART ICON */
+/* ==========================================
+   SHOPPING CART ICON
+========================================== */
+
 #cartIcon {
     position: relative !important;
     display: inline-flex !important;
@@ -137,35 +152,34 @@
     z-index: 99999 !important;
 }
 
-/* Active Shopping Cart */
+/* ==========================================
+   ACTIVE SHOPPING CART
+   ICON COLOR ONLY - NO UNDERLINE OR DOT
+========================================== */
+
 #cartIcon.active {
     color: #F56C6C !important;
     transform: scale(1.1);
+    border: none !important;
+    border-bottom: none !important;
+    padding-bottom: 0 !important;
+    text-decoration: none !important;
 }
 
 #cartIcon.active svg {
-    fill: #F56C6C;
+    fill: #F56C6C !important;
 }
 
+/* Remove active cart decorations */
 #cartIcon.active::after {
-    content: "";
-    position: absolute;
-    bottom: -7px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 7px;
-    height: 7px;
-    background: #F56C6C;
-    border-radius: 50%;
+    content: none !important;
+    display: none !important;
 }
 
-.nav-icon.active {
-    color: #F56C6C !important;
-    border-bottom: 3px solid #F56C6C;
-    padding-bottom: 5px;
-}
+/* ==========================================
+   CART PAGE NAVIGATION
+========================================== */
 
-/* CART PAGE NAVIGATION */
 .cart-page .navbar .nav-link.active {
     color: black !important;
     font-weight: normal !important;
@@ -176,32 +190,30 @@
 }
 
 /* Highlight Cart Icon on Cart Page */
-.cart-page #cartIcon {
+.cart-page #cartIcon,
+.cart-page #cartIcon.active {
     color: #F56C6C !important;
+    border: none !important;
+    border-bottom: none !important;
+    padding-bottom: 0 !important;
 }
 
-.cart-page #cartIcon svg {
+.cart-page #cartIcon svg,
+.cart-page #cartIcon.active svg {
     fill: #F56C6C !important;
 }
 
-.cart-page #cartIcon.active {
-    color: #F56C6C !important;
-    transform: scale(1.1);
-}
-
+/* No underline or dot on cart page */
+.cart-page #cartIcon::after,
 .cart-page #cartIcon.active::after {
-    content: "";
-    position: absolute;
-    bottom: -7px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 7px;
-    height: 7px;
-    background: #F56C6C;
-    border-radius: 50%;
+    content: none !important;
+    display: none !important;
 }
 
-/* OTHER ELEMENTS */
+/* ==========================================
+   OTHER ELEMENTS
+========================================== */
+
 form.d-flex li {
     list-style: none;
 }
