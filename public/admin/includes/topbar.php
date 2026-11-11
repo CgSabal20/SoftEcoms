@@ -61,7 +61,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
                     <li class="nav-item">
                         <a class="nav-link"
                             href="/SoftEcoms/public/order.php">
-                            Order
+                            Orders
                         </a>
                     </li>
 

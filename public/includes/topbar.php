@@ -88,7 +88,7 @@ $cartCount = 0;
                             class="nav-link <?= $current_page === 'order.php' ? 'active' : '' ?>"
                             href="/SoftEcoms/public/order.php"
                         >
-                            Order
+                            Orders
                         </a>
                     </li>
 
