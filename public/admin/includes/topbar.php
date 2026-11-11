@@ -102,7 +102,7 @@ $cartCount = 0;
                             href="/SoftEcoms/public/contactUs.php"
                             <?= $isContactPage ? 'aria-current="page"' : '' ?>
                         >
-                            Contact Us
+                            Contact
                         </a>
                     </li>
 
