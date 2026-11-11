@@ -15,10 +15,10 @@
       <div class="col-md-4 mb-4">
         <h5>Quick Links</h5>
         <ul class="footer-links">
-          <li><a href="/E-commerce/public/index">Home</a></li>
-          <li><a href="/E-commerce/public/shop.php">Shop</a></li>
-          <li><a href="/E-commerce/public/aboutUs">About Us</a></li>
-          <li><a href="/E-commerce/public/contactUs">Contact</a></li>
+          <li><a href="/SoftEcoms/public/index.php">Home</a></li>
+          <li><a href="/SoftEcoms/public/order.php">Shop</a></li>
+          <li><a href="/SoftEcoms/public/aboutUs.php">About Us</a></li>
+          <li><a href="/SoftEcoms/public/contactUs.php">Contact</a></li>
         </ul>
       </div>
 
