@@ -371,7 +371,7 @@ function sweetProductImage($imageName)
                 <h6 class="cta-subtitle">
                     Enjoy the heartfelt moments with your Loved Ones at our Shop!
                 </h6>
-                <a href="/SoftEcoms/public/products.php" class="btn2 mt-3">
+                <a href="/SoftEcoms/public/contactUs.php" class="btn2 mt-3">
                     See More
                 </a>
             </div>
