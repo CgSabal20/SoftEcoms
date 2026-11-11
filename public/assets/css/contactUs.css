@@ -135,12 +135,14 @@
     padding-top: 15px;
 }
 
+/* CONTACT SECTION HEADINGS */
+
 .contact-info h2,
 .contact-form-heading h2 {
     font-family: 'Playfair Display', serif;
     font-size: 34px;
     font-weight: 700;
-    color: #704638;
+    color: #F56C6C;
     margin: 0 0 16px;
 }
 
