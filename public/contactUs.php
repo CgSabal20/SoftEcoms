@@ -65,6 +65,7 @@ include('./admin/includes/topbar.php');
                     <div>
                         <h3>Call Us</h3>
                         <p>+63 912 345 6789</p>
+                        <p>+63 910 559 6442</p>
                     </div>
                 </div>
 
