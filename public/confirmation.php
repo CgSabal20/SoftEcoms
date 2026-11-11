@@ -305,5 +305,3 @@ include('./admin/includes/topbar.php');
     </div>
 
 </div>
-
-<?php include('./admin/includes/footer.php'); ?>
