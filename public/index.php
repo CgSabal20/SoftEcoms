@@ -372,7 +372,7 @@ function sweetProductImage($imageName)
                     Enjoy the heartfelt moments with your Loved Ones at our Shop!
                 </h6>
                 <a href="/SoftEcoms/public/contactUs.php" class="btn2 mt-3">
-                    See More
+                    Click Here
                 </a>
             </div>
         </div>
