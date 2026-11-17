@@ -18,7 +18,7 @@ if (isset($_GET['uuid']) && trim($_GET['uuid']) !== '') {
 
     $stmt = mysqli_prepare(
         $conn,
-        "SELECT id, uuid, productName, productDescription, price, img, stock
+        "SELECT id, uuid, productName, productDescription, price, img
          FROM product_item
          WHERE uuid = ?
          LIMIT 1"
@@ -42,7 +42,7 @@ if (isset($_GET['uuid']) && trim($_GET['uuid']) !== '') {
 
     $stmt = mysqli_prepare(
         $conn,
-        "SELECT id, uuid, productName, productDescription, price, img, stock
+        "SELECT id, uuid, productName, productDescription, price, img
          FROM product_item
          WHERE id = ?
          LIMIT 1"
@@ -76,10 +76,6 @@ if (!$product) {
     http_response_code(404);
     exit("Product not found.");
 }
-
-// Normalize stock to an integer.
-$productStock = max(0, (int)($product['stock'] ?? 0));
-$isOutOfStock = $productStock <= 0;
 
 include('includes/header.php');
 include('includes/topbar.php');
@@ -126,28 +122,6 @@ include('includes/topbar.php');
 
             </div>
 
-            <!-- STOCK INFORMATION -->
-
-            <div class="stock-information mt-2 mb-3">
-
-                <?php if ($isOutOfStock): ?>
-
-                    <span class="text-danger fw-bold">
-                        <i class="fas fa-times-circle"></i>
-                        Out of Stock
-                    </span>
-
-                <?php else: ?>
-
-                    <span class="text-success fw-bold">
-                        <i class="fas fa-check-circle"></i>
-                        <?php echo $productStock; ?> available in stock
-                    </span>
-
-                <?php endif; ?>
-
-            </div>
-
             <p class="product-description">
                 <?php
                 echo nl2br(htmlspecialchars(
@@ -187,7 +161,6 @@ include('includes/topbar.php');
                         type="button"
                         id="decreaseQuantity"
                         aria-label="Decrease quantity"
-                        <?php echo $isOutOfStock ? 'disabled' : ''; ?>
                     >
                         −
                     </button>
@@ -198,17 +171,14 @@ include('includes/topbar.php');
                         id="quantity_input"
                         value="1"
                         min="1"
-                        max="<?php echo $productStock; ?>"
                         step="1"
                         required
-                        <?php echo $isOutOfStock ? 'disabled' : ''; ?>
                     >
 
                     <button
                         type="button"
                         id="increaseQuantity"
                         aria-label="Increase quantity"
-                        <?php echo $isOutOfStock ? 'disabled' : ''; ?>
                     >
                         +
                     </button>
@@ -219,14 +189,10 @@ include('includes/topbar.php');
                     type="submit"
                     name="add_to_cart"
                     class="buy-btn"
-                    <?php echo $isOutOfStock ? 'disabled' : ''; ?>
                 >
 
                     <i class="fas fa-shopping-cart" aria-hidden="true"></i>
-
-                    <?php echo $isOutOfStock
-                        ? 'Out of Stock'
-                        : 'Add to Cart'; ?>
+                    Add to Cart
 
                 </button>
 
@@ -239,32 +205,6 @@ include('includes/topbar.php');
 </main>
 
 <style>
-
-/* ==========================================
-   STOCK INFORMATION
-========================================== */
-
-.stock-information {
-    font-size: 14px;
-}
-
-.stock-information .text-danger {
-    color: #dc3545 !important;
-}
-
-.stock-information .text-success {
-    color: #198754 !important;
-}
-
-/* ==========================================
-   DISABLED BUTTONS
-========================================== */
-
-.buy-btn:disabled,
-.quantity-box button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
 
 /* ==========================================
    FLYING PRODUCT
@@ -372,15 +312,12 @@ document.addEventListener("DOMContentLoaded", function () {
         document.getElementById("cartIcon") ||
         document.querySelector('a.nav-icon[href*="cart.php"]');
 
-    const availableStock = Number(quantityInput.max) || 0;
 
     // ==========================================
     // QUANTITY CONTROLS
     // ==========================================
 
     decreaseButton.addEventListener("click", function () {
-
-        if (availableStock <= 0) return;
 
         quantityInput.value = Math.max(
             1,
@@ -391,32 +328,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
     increaseButton.addEventListener("click", function () {
 
-        if (availableStock <= 0) return;
-
         const currentQuantity =
             parseInt(quantityInput.value, 10) || 1;
 
-        if (currentQuantity < availableStock) {
-
-            quantityInput.value = currentQuantity + 1;
-
-        } else {
-
-            showMessage(
-                `Only ${availableStock} item(s) available.`,
-                true
-            );
-
-        }
+        quantityInput.value = currentQuantity + 1;
 
     });
 
     quantityInput.addEventListener("change", function () {
-
-        if (availableStock <= 0) {
-            quantityInput.value = 0;
-            return;
-        }
 
         let quantity = Number(quantityInput.value);
 
@@ -424,20 +343,10 @@ document.addEventListener("DOMContentLoaded", function () {
             quantity = 1;
         }
 
-        if (quantity > availableStock) {
-
-            quantity = availableStock;
-
-            showMessage(
-                `Only ${availableStock} item(s) available.`,
-                true
-            );
-
-        }
-
         quantityInput.value = quantity;
 
     });
+
 
     // ==========================================
     // UPDATE CART BADGE
@@ -489,6 +398,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     }
 
+
     // ==========================================
     // ADD PRODUCT TO CART
     // ==========================================
@@ -503,15 +413,6 @@ document.addEventListener("DOMContentLoaded", function () {
             'input[name="product_uuid"]'
         ).value;
 
-        // CHECK STOCK
-
-        if (availableStock <= 0) {
-
-            showMessage("This product is currently out of stock.", true);
-
-            return;
-
-        }
 
         // VALIDATE QUANTITY
 
@@ -521,19 +422,6 @@ document.addEventListener("DOMContentLoaded", function () {
             quantityInput.focus();
 
             showMessage("Please enter a valid quantity.", true);
-
-            return;
-
-        }
-
-        if (quantity > availableStock) {
-
-            showMessage(
-                `Only ${availableStock} item(s) available.`,
-                true
-            );
-
-            quantityInput.value = availableStock;
 
             return;
 
@@ -594,6 +482,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             }
 
+
             // LOGIN CHECK
 
             if (response.status === 401) {
@@ -605,7 +494,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
             }
 
-            // STOCK OR OTHER API ERROR
+
+            // API ERROR
 
             if (!response.ok || !data.success) {
 
@@ -615,13 +505,16 @@ document.addEventListener("DOMContentLoaded", function () {
 
             }
 
+
             // ANIMATE PRODUCT
 
             await animateProductToCart();
 
+
             // GET THE LATEST DATABASE COUNT
 
             await updateCartBadge();
+
 
             // SUCCESS MESSAGE
 
@@ -637,15 +530,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
         } finally {
 
-            // Keep button disabled if the product is out of stock.
-            if (availableStock > 0) {
-                addButton.disabled = false;
-                addButton.innerHTML = originalText;
-            }
+            addButton.disabled = false;
+            addButton.innerHTML = originalText;
 
         }
 
     });
+
 
     // ==========================================
     // FLYING IMAGE ANIMATION
@@ -724,6 +615,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     }
 
+
     // ==========================================
     // NOTIFICATION
     // ==========================================
@@ -757,6 +649,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }, 2200);
 
     }
+
 
     // ==========================================
     // INITIALIZATION
