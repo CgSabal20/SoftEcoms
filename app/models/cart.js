@@ -1,7 +1,9 @@
+const Product = require("./product");
 
 class Cart {
   constructor(db) {
     this.db = db;
+    this.product = new Product(db);
     this.VAT_RATE = 0.12;
   }
 
@@ -31,28 +33,27 @@ class Cart {
     try {
       await connection.beginTransaction();
 
-      // Verify customer.
       const [customers] = await connection.execute(
         `SELECT id
          FROM users
          WHERE id = ?
          AND role IN ('user', 'customer')
          LIMIT 1`,
-        [parsedUserId]
+        [parsedUserId],
       );
 
       if (customers.length === 0) {
         throw new Error("Customer not found.");
       }
 
-      // Find and lock product.
+      // Lock product while checking available stock.
       const [products] = await connection.execute(
         `SELECT id, productName, stock
          FROM product_item
          WHERE uuid = ?
          LIMIT 1
          FOR UPDATE`,
-        [cleanUUID]
+        [cleanUUID],
       );
 
       if (products.length === 0) {
@@ -63,12 +64,9 @@ class Cart {
       const availableStock = Number(product.stock);
 
       if (availableStock <= 0) {
-        throw new Error(
-          `${product.productName} is currently out of stock.`
-        );
+        throw new Error(`${product.productName} is currently out of stock.`);
       }
 
-      // Check existing cart quantity.
       const [existingItems] = await connection.execute(
         `SELECT quantity
          FROM cart
@@ -76,7 +74,7 @@ class Cart {
          AND product_id = ?
          LIMIT 1
          FOR UPDATE`,
-        [parsedUserId, product.id]
+        [parsedUserId, product.id],
       );
 
       const existingQuantity = existingItems.length
@@ -88,11 +86,10 @@ class Cart {
       if (requestedTotal > availableStock) {
         throw new Error(
           `Only ${availableStock} unit(s) of ${product.productName} are available. ` +
-          `You already have ${existingQuantity} in your cart.`
+            `You already have ${existingQuantity} in your cart.`,
         );
       }
 
-      // Insert or increase quantity.
       await connection.execute(
         `INSERT INTO cart (
           user_id,
@@ -102,7 +99,7 @@ class Cart {
         VALUES (?, ?, ?)
         ON DUPLICATE KEY UPDATE
           quantity = quantity + VALUES(quantity)`,
-        [parsedUserId, product.id, parsedQuantity]
+        [parsedUserId, product.id, parsedQuantity],
       );
 
       await connection.commit();
@@ -114,9 +111,8 @@ class Cart {
         message: "Product added to cart!",
         productID: product.id,
         quantity: parsedQuantity,
-        cartCount
+        cartCount,
       };
-
     } catch (error) {
       await connection.rollback();
       throw error;
@@ -158,7 +154,7 @@ class Cart {
         ON cart.product_id = product_item.id
       WHERE cart.user_id = ?
       ORDER BY cart.id DESC`,
-      [parsedUserId]
+      [parsedUserId],
     );
 
     return rows;
@@ -190,28 +186,28 @@ class Cart {
     try {
       await connection.beginTransaction();
 
-      // Find customer's cart item.
+      // Find the customer's cart item.
       const [cartItems] = await connection.execute(
         `SELECT product_id
          FROM cart
          WHERE id = ?
          AND user_id = ?
          LIMIT 1`,
-        [parsedCartID, parsedUserId]
+        [parsedCartID, parsedUserId],
       );
 
       if (cartItems.length === 0) {
         throw new Error("Cart item not found.");
       }
 
-      // Lock product and check stock.
+      // Lock the product before checking its stock.
       const [products] = await connection.execute(
         `SELECT productName, stock
          FROM product_item
          WHERE id = ?
          LIMIT 1
          FOR UPDATE`,
-        [cartItems[0].product_id]
+        [cartItems[0].product_id],
       );
 
       if (products.length === 0) {
@@ -222,24 +218,21 @@ class Cart {
       const availableStock = Number(product.stock);
 
       if (availableStock <= 0) {
-        throw new Error(
-          `${product.productName} is currently out of stock.`
-        );
+        throw new Error(`${product.productName} is currently out of stock.`);
       }
 
       if (parsedQuantity > availableStock) {
         throw new Error(
-          `Only ${availableStock} unit(s) of ${product.productName} are available.`
+          `Only ${availableStock} unit(s) of ${product.productName} are available.`,
         );
       }
 
-      // Update quantity.
       const [result] = await connection.execute(
         `UPDATE cart
          SET quantity = ?
          WHERE id = ?
          AND user_id = ?`,
-        [parsedQuantity, parsedCartID, parsedUserId]
+        [parsedQuantity, parsedCartID, parsedUserId],
       );
 
       if (result.affectedRows === 0) {
@@ -249,7 +242,6 @@ class Cart {
       await connection.commit();
 
       return true;
-
     } catch (error) {
       await connection.rollback();
       throw error;
@@ -278,7 +270,7 @@ class Cart {
       `DELETE FROM cart
        WHERE id = ?
        AND user_id = ?`,
-      [parsedCartID, parsedUserId]
+      [parsedCartID, parsedUserId],
     );
 
     return result.affectedRows > 0;
@@ -298,7 +290,7 @@ class Cart {
     const [result] = await this.db.execute(
       `DELETE FROM cart
        WHERE user_id = ?`,
-      [parsedUserId]
+      [parsedUserId],
     );
 
     return result.affectedRows;
@@ -306,7 +298,6 @@ class Cart {
 
   // ==========================================
   // GET CART ITEM COUNT
-  // Total quantity of all products
   // ==========================================
 
   async getCartCount(userId) {
@@ -320,7 +311,7 @@ class Cart {
       `SELECT COALESCE(SUM(quantity), 0) AS totalItems
        FROM cart
        WHERE user_id = ?`,
-      [parsedUserId]
+      [parsedUserId],
     );
 
     return Number(rows[0].totalItems);
@@ -361,11 +352,7 @@ class Cart {
     if (Array.isArray(cartIDs)) {
       const parsedIDs = cartIDs.map(Number);
 
-      if (
-        parsedIDs.some(
-          id => !Number.isSafeInteger(id) || id < 1
-        )
-      ) {
+      if (parsedIDs.some((id) => !Number.isSafeInteger(id) || id < 1)) {
         throw new Error("Invalid cart item ID.");
       }
 
@@ -387,9 +374,7 @@ class Cart {
   async tax(userId, cartIDs = null) {
     const subtotalAmount = await this.subtotal(userId, cartIDs);
 
-    return Math.round(
-      subtotalAmount * this.VAT_RATE * 100
-    ) / 100;
+    return Math.round(subtotalAmount * this.VAT_RATE * 100) / 100;
   }
 
   // ==========================================
@@ -398,11 +383,10 @@ class Cart {
 
   async Total(userId, cartIDs = null) {
     const subtotalAmount = await this.subtotal(userId, cartIDs);
-    const taxAmount = await this.tax(userId, cartIDs);
 
-    return Math.round(
-      (subtotalAmount + taxAmount) * 100
-    ) / 100;
+    const taxAmount = Math.round(subtotalAmount * this.VAT_RATE * 100) / 100;
+
+    return Math.round((subtotalAmount + taxAmount) * 100) / 100;
   }
 
   // ==========================================
@@ -410,26 +394,7 @@ class Cart {
   // ==========================================
 
   async getCartTotal(userId) {
-    const parsedUserId = Number(userId);
-
-    if (!Number.isSafeInteger(parsedUserId) || parsedUserId < 1) {
-      throw new Error("Invalid customer ID.");
-    }
-
-    const [rows] = await this.db.execute(
-      `SELECT
-        COALESCE(
-          SUM(cart.quantity * product_item.price),
-          0
-        ) AS totalAmount
-       FROM cart
-       INNER JOIN product_item
-         ON cart.product_id = product_item.id
-       WHERE cart.user_id = ?`,
-      [parsedUserId]
-    );
-
-    return Number(rows[0].totalAmount);
+    return await this.subtotal(userId);
   }
 }
 

@@ -5,14 +5,27 @@ const mysql = require("mysql2/promise");
 const session = require("express-session");
 const cors = require("cors");
 
+// ==========================================
+// CONTROLLER AND MODEL IMPORTS
+// ==========================================
+
 const Authentication = require("./app/controllers/Authentication");
 const CustomerController = require("./app/controllers/customerController");
 const CheckoutController = require("./app/controllers/checkoutController");
+const ContactController = require("./app/controllers/contactController");
+const AdminOrderController = require("./app/controllers/adminOrderController");
+const AdminCustomerController = require("./app/controllers/adminCustomerController");
+
+const Product = require("./app/models/product");
+const requireAdmin = require("./app/middleware/adminAuth");
+
+// ==========================================
+// APP CONFIGURATION
+// ==========================================
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Check required environment variables
 if (!process.env.SESSION_SECRET) {
   throw new Error("SESSION_SECRET is missing from .env");
 }
@@ -21,6 +34,9 @@ if (!process.env.DB_NAME) {
   throw new Error("DB_NAME is missing from .env");
 }
 
+// ==========================================
+// MIDDLEWARE
+// ==========================================
 
 app.use(
   cors({
@@ -29,10 +45,19 @@ app.use(
   }),
 );
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: "7mb" }));
 
-// Express session
+app.use(
+  express.urlencoded({
+    extended: true,
+    limit: "7mb",
+  }),
+);
+
+// ==========================================
+// SESSION CONFIGURATION
+// ==========================================
+
 app.use(
   session({
     name: "connect.sid",
@@ -42,15 +67,25 @@ app.use(
     cookie: {
       httpOnly: true,
       sameSite: "lax",
-      secure: false, // Local HTTP development only
+      secure: false,
       maxAge: 60 * 60 * 1000,
     },
   }),
 );
 
+// ==========================================
+// START SERVER
+// ==========================================
+
 async function startServer() {
+  let db;
+
   try {
-    const db = mysql.createPool({
+    // ==========================================
+    // DATABASE CONNECTION
+    // ==========================================
+
+    db = mysql.createPool({
       host: process.env.DB_HOST || "localhost",
       user: process.env.DB_USER || "root",
       password: process.env.DB_PASSWORD || "",
@@ -60,36 +95,258 @@ async function startServer() {
       queueLimit: 0,
     });
 
-    // Test database connection
     await db.query("SELECT 1");
 
     console.log("MySQL connected successfully!");
 
-
+    // ==========================================
+    // INITIALIZE CONTROLLERS AND MODELS
+    // ==========================================
 
     const auth = new Authentication(db);
+
     const customerController = new CustomerController(db);
+
     const checkoutController = new CheckoutController(db);
 
+    const contactController = new ContactController(db);
 
+    const adminOrderController = new AdminOrderController(db);
+
+    const adminCustomerController = new AdminCustomerController(db);
+
+    const product = new Product(db);
+
+    // ==========================================
+    // GENERAL ROUTES
+    // ==========================================
 
     app.get("/", (req, res) => {
       res.send("Sweet! Node.js server is running.");
     });
 
+    // ==========================================
+    // AUTHENTICATION ROUTES
+    // ==========================================
 
     app.post("/register", auth.register);
+
     app.post("/login", auth.login);
+
     app.post("/logout", auth.logout);
 
     app.get("/me", auth.me);
+
     app.get("/verify-email", auth.verifyEmail);
 
     app.post("/forgot-password", auth.forgotPassword);
+
     app.post("/reset-password", auth.resetPassword);
+
     app.post("/complete-profile", auth.completeProfile);
 
- 
+    // ==========================================
+    // CUSTOMER PROFILE ROUTES
+    // ==========================================
+
+    app.put("/update-profile", auth.updateProfile);
+
+    // ==========================================
+    // PRODUCT ROUTES
+    // ==========================================
+
+    // Get all products
+    app.get("/products", async (req, res) => {
+      try {
+        const products = await product.getAllProducts();
+
+        return res.status(200).json({
+          success: true,
+          products,
+        });
+      } catch (error) {
+        console.error("Get products error:", error);
+
+        return res.status(500).json({
+          success: false,
+          message: "Failed to retrieve products.",
+        });
+      }
+    });
+
+    // Get product by ID
+    app.get("/products/:id", async (req, res) => {
+      try {
+        const foundProduct = await product.getProductById(req.params.id);
+
+        if (!foundProduct) {
+          return res.status(404).json({
+            success: false,
+            message: "Product not found.",
+          });
+        }
+
+        return res.status(200).json({
+          success: true,
+          product: foundProduct,
+        });
+      } catch (error) {
+        console.error("Get product error:", error);
+
+        return res.status(400).json({
+          success: false,
+          message: error.message,
+        });
+      }
+    });
+
+    // ==========================================
+    // INVENTORY MANAGEMENT ROUTES
+    // ADMIN ONLY
+    // ==========================================
+
+    // Add stock to an existing product
+    app.post("/inventory/:id/add-stock", requireAdmin, async (req, res) => {
+      try {
+        const { quantity } = req.body || {};
+
+        if (quantity === undefined) {
+          return res.status(400).json({
+            success: false,
+            message: "Stock quantity is required.",
+          });
+        }
+
+        const result = await product.addStock(req.params.id, quantity);
+
+        return res.status(200).json({
+          success: true,
+          message: "Stock added successfully.",
+          inventory: result,
+        });
+      } catch (error) {
+        console.error("Add stock error:", error);
+
+        const status = error.message === "Product not found." ? 404 : 400;
+
+        return res.status(status).json({
+          success: false,
+          message: error.message,
+        });
+      }
+    });
+
+    // Remove stock from an existing product
+    app.post("/inventory/:id/remove-stock", requireAdmin, async (req, res) => {
+      try {
+        const { quantity } = req.body || {};
+
+        if (quantity === undefined) {
+          return res.status(400).json({
+            success: false,
+            message: "Stock quantity is required.",
+          });
+        }
+
+        const result = await product.removeStock(req.params.id, quantity);
+
+        return res.status(200).json({
+          success: true,
+          message: "Stock removed successfully.",
+          inventory: result,
+        });
+      } catch (error) {
+        console.error("Remove stock error:", error);
+
+        const status = error.message === "Product not found." ? 404 : 400;
+
+        return res.status(status).json({
+          success: false,
+          message: error.message,
+        });
+      }
+    });
+
+    // Set product stock to an exact quantity
+    app.put("/inventory/:id/stock", requireAdmin, async (req, res) => {
+      try {
+        const { stock } = req.body || {};
+
+        if (stock === undefined) {
+          return res.status(400).json({
+            success: false,
+            message: "Stock quantity is required.",
+          });
+        }
+
+        const result = await product.updateStock(req.params.id, stock);
+
+        return res.status(200).json({
+          success: true,
+          message: "Product stock updated successfully.",
+          inventory: result,
+        });
+      } catch (error) {
+        console.error("Update stock error:", error);
+
+        const status = error.message === "Product not found." ? 404 : 400;
+
+        return res.status(status).json({
+          success: false,
+          message: error.message,
+        });
+      }
+    });
+
+    // Get low-stock products
+    app.get("/inventory/low-stock", requireAdmin, async (req, res) => {
+      try {
+        const threshold = req.query.threshold ?? 5;
+
+        const products = await product.getLowStockProducts(threshold);
+
+        return res.status(200).json({
+          success: true,
+          threshold: Number(threshold),
+          products,
+        });
+      } catch (error) {
+        console.error("Low stock error:", error);
+
+        return res.status(400).json({
+          success: false,
+          message: error.message,
+        });
+      }
+    });
+
+    // Check product stock availability
+    app.post("/inventory/check-stock", async (req, res) => {
+      try {
+        const { productUUID, quantity } = req.body || {};
+
+        const result = await product.checkStockAvailability(
+          productUUID,
+          quantity,
+        );
+
+        return res.status(200).json({
+          success: true,
+          ...result,
+        });
+      } catch (error) {
+        console.error("Check stock error:", error);
+
+        return res.status(400).json({
+          success: false,
+          message: error.message,
+        });
+      }
+    });
+
+    // ==========================================
+    // CUSTOMER CART ROUTES
+    // ==========================================
 
     app.post("/cart/add", customerController.addToCart);
 
@@ -103,27 +360,166 @@ async function startServer() {
 
     app.delete("/cart/clear", customerController.clearCart);
 
+    app.post("/cart/summary", customerController.getCartSummary);
 
+    // ==========================================
+    // CUSTOMER ORDER ROUTES
+    // ==========================================
+
+    app.get("/orders/history", customerController.getOrderHistory);
+
+    app.get("/orders/receipt/:uuid", customerController.getOrderReceipt);
+
+    // ==========================================
+    // CUSTOMER CANCELLATION ROUTE
+    // ==========================================
+
+    app.post("/orders/cancel-request", customerController.requestCancellation);
+
+    // ==========================================
+    // ADMIN CANCELLATION MANAGEMENT
+    // ==========================================
+
+    // Get all cancellation requests
+    app.get(
+      "/admin/orders/cancellation-requests",
+      requireAdmin,
+      adminOrderController.getCancellationRequests,
+    );
+
+    // Approve or reject cancellation request
+    app.post(
+      "/admin/orders/cancellation-requests/:id/review",
+      requireAdmin,
+      adminOrderController.reviewCancellationRequest,
+    );
+
+    // ==========================================
+    // ADMIN ORDER STATUS MANAGEMENT
+    // ==========================================
+
+    app.post(
+      "/admin/orders/update-status",
+      requireAdmin,
+      adminOrderController.updateOrderStatus,
+    );
+
+    // ==========================================
+    // ADMIN CUSTOMER MANAGEMENT ROUTES
+    // ==========================================
+
+    // Get customer profile, statistics, and order history
+    app.get(
+      "/admin/customers/:id",
+      requireAdmin,
+      adminCustomerController.getCustomer,
+    );
+
+    // Update customer information and profile picture
+    app.put(
+      "/admin/customers/:id",
+      requireAdmin,
+      adminCustomerController.updateCustomer,
+    );
+
+    // Reset customer password
+    app.put(
+      "/admin/customers/:id/password",
+      requireAdmin,
+      adminCustomerController.resetPassword,
+    );
+
+    // Activate or deactivate customer account
+    app.patch(
+      "/admin/customers/:id/status",
+      requireAdmin,
+      adminCustomerController.updateStatus,
+    );
+
+    // ==========================================
+    // CHECKOUT ROUTE
+    // ==========================================
 
     app.post("/checkout", checkoutController.checkout);
 
+    // ==========================================
+    // CONTACT ROUTES
+    // ==========================================
+
+    // Customer submits a contact message
+    app.post("/contact", contactController.createMessage);
+
+    // Admin retrieves all contact messages
+    app.get(
+      "/contact/messages",
+      requireAdmin,
+      contactController.getAllMessages,
+    );
+
+    // Admin retrieves one contact message
+    app.get(
+      "/contact/messages/:id",
+      requireAdmin,
+      contactController.getMessageById,
+    );
+
+    // Admin changes message status: unread, read, or replied
+    app.patch(
+      "/contact/messages/:id/status",
+      requireAdmin,
+      contactController.updateMessageStatus,
+    );
+
+    // ==========================================
+    // 404 HANDLER
+    // ==========================================
 
     app.use((req, res) => {
-      res.status(404).json({
+      return res.status(404).json({
         success: false,
         message: "API endpoint not found.",
       });
     });
 
+    // ==========================================
+    // ERROR HANDLER
+    // ==========================================
 
+    app.use((error, req, res, next) => {
+      console.error("Express error:", error);
+
+      if (res.headersSent) {
+        return next(error);
+      }
+
+      return res.status(500).json({
+        success: false,
+        message: "An internal server error occurred.",
+      });
+    });
+
+    // ==========================================
+    // START LISTENING
+    // ==========================================
 
     app.listen(PORT, () => {
       console.log(`Sweet! server running at http://localhost:${PORT}`);
     });
   } catch (error) {
     console.error("Server startup failed:", error);
+
+    if (db) {
+      await db.end().catch((dbError) => {
+        console.error("Database shutdown error:", dbError);
+      });
+    }
+
     process.exit(1);
   }
 }
+
+// ==========================================
+// RUN SERVER
+// ==========================================
 
 startServer();
