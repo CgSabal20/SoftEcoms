@@ -282,7 +282,3 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 });
 </script>
-
-<?php
-include_once __DIR__ . '/../admin/includes/footer.php';
-?>
