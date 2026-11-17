@@ -4,8 +4,8 @@ session_start();
 
 $pageClass = "about-page";
 
-include('./admin/includes/header.php');
-include('./admin/includes/topbar.php');
+include('includes/header.php');
+include('includes/topbar.php');
 ?>
 
 
@@ -98,4 +98,4 @@ include('./admin/includes/topbar.php');
 
 
 
-<?php include __DIR__ . "/admin/includes/footer.php" ?>
+<?php include __DIR__ . "/includes/footer.php"; ?>
