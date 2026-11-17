@@ -8,7 +8,9 @@ require_once __DIR__ . "/../app/config/config.php";
 
 $product = null;
 
-/* FIND PRODUCT USING UUID OR ID */
+/* ==========================================
+   FIND PRODUCT USING UUID OR ID
+========================================== */
 
 if (isset($_GET['uuid']) && trim($_GET['uuid']) !== '') {
 
@@ -16,7 +18,7 @@ if (isset($_GET['uuid']) && trim($_GET['uuid']) !== '') {
 
     $stmt = mysqli_prepare(
         $conn,
-        "SELECT id, uuid, productName, productDescription, price, img
+        "SELECT id, uuid, productName, productDescription, price, img, stock
          FROM product_item
          WHERE uuid = ?
          LIMIT 1"
@@ -40,7 +42,7 @@ if (isset($_GET['uuid']) && trim($_GET['uuid']) !== '') {
 
     $stmt = mysqli_prepare(
         $conn,
-        "SELECT id, uuid, productName, productDescription, price, img
+        "SELECT id, uuid, productName, productDescription, price, img, stock
          FROM product_item
          WHERE id = ?
          LIMIT 1"
@@ -75,6 +77,10 @@ if (!$product) {
     exit("Product not found.");
 }
 
+// Normalize stock to an integer.
+$productStock = max(0, (int)($product['stock'] ?? 0));
+$isOutOfStock = $productStock <= 0;
+
 include('includes/header.php');
 include('includes/topbar.php');
 ?>
@@ -82,6 +88,10 @@ include('includes/topbar.php');
 <main class="product-page">
 
     <div class="product-container" style="margin-top: 60px;">
+
+        <!-- ==========================================
+             PRODUCT IMAGE
+        ========================================== -->
 
         <section class="product-image-panel">
 
@@ -96,6 +106,10 @@ include('includes/topbar.php');
 
         </section>
 
+        <!-- ==========================================
+             PRODUCT DETAILS
+        ========================================== -->
+
         <section class="product-details">
 
             <div class="brand">Premium Collection</div>
@@ -107,8 +121,30 @@ include('includes/topbar.php');
             <div class="price-section">
 
                 <span class="price">
-                    ₱<?php echo number_format((float) $product['price'], 2); ?>
+                    ₱<?php echo number_format((float)$product['price'], 2); ?>
                 </span>
+
+            </div>
+
+            <!-- STOCK INFORMATION -->
+
+            <div class="stock-information mt-2 mb-3">
+
+                <?php if ($isOutOfStock): ?>
+
+                    <span class="text-danger fw-bold">
+                        <i class="fas fa-times-circle"></i>
+                        Out of Stock
+                    </span>
+
+                <?php else: ?>
+
+                    <span class="text-success fw-bold">
+                        <i class="fas fa-check-circle"></i>
+                        <?php echo $productStock; ?> available in stock
+                    </span>
+
+                <?php endif; ?>
 
             </div>
 
@@ -121,6 +157,10 @@ include('includes/topbar.php');
                 ));
                 ?>
             </p>
+
+            <!-- ==========================================
+                 ADD TO CART FORM
+            ========================================== -->
 
             <form
                 method="POST"
@@ -147,6 +187,7 @@ include('includes/topbar.php');
                         type="button"
                         id="decreaseQuantity"
                         aria-label="Decrease quantity"
+                        <?php echo $isOutOfStock ? 'disabled' : ''; ?>
                     >
                         −
                     </button>
@@ -157,14 +198,17 @@ include('includes/topbar.php');
                         id="quantity_input"
                         value="1"
                         min="1"
+                        max="<?php echo $productStock; ?>"
                         step="1"
                         required
+                        <?php echo $isOutOfStock ? 'disabled' : ''; ?>
                     >
 
                     <button
                         type="button"
                         id="increaseQuantity"
                         aria-label="Increase quantity"
+                        <?php echo $isOutOfStock ? 'disabled' : ''; ?>
                     >
                         +
                     </button>
@@ -175,9 +219,15 @@ include('includes/topbar.php');
                     type="submit"
                     name="add_to_cart"
                     class="buy-btn"
+                    <?php echo $isOutOfStock ? 'disabled' : ''; ?>
                 >
+
                     <i class="fas fa-shopping-cart" aria-hidden="true"></i>
-                    Add to Cart
+
+                    <?php echo $isOutOfStock
+                        ? 'Out of Stock'
+                        : 'Add to Cart'; ?>
+
                 </button>
 
             </form>
@@ -190,7 +240,35 @@ include('includes/topbar.php');
 
 <style>
 
-/* FLYING PRODUCT */
+/* ==========================================
+   STOCK INFORMATION
+========================================== */
+
+.stock-information {
+    font-size: 14px;
+}
+
+.stock-information .text-danger {
+    color: #dc3545 !important;
+}
+
+.stock-information .text-success {
+    color: #198754 !important;
+}
+
+/* ==========================================
+   DISABLED BUTTONS
+========================================== */
+
+.buy-btn:disabled,
+.quantity-box button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ==========================================
+   FLYING PRODUCT
+========================================== */
 
 .flying-product {
     position: fixed !important;
@@ -206,7 +284,9 @@ include('includes/topbar.php');
         border-radius 0.8s ease;
 }
 
-/* CART BOUNCE */
+/* ==========================================
+   CART BOUNCE
+========================================== */
 
 #cartIcon.cart-bounce {
     animation: cartBounce 0.6s ease;
@@ -228,7 +308,9 @@ include('includes/topbar.php');
 
 }
 
-/* SUCCESS NOTIFICATION */
+/* ==========================================
+   SUCCESS NOTIFICATION
+========================================== */
 
 .cart-toast {
     position: fixed;
@@ -290,12 +372,15 @@ document.addEventListener("DOMContentLoaded", function () {
         document.getElementById("cartIcon") ||
         document.querySelector('a.nav-icon[href*="cart.php"]');
 
+    const availableStock = Number(quantityInput.max) || 0;
 
     // ==========================================
     // QUANTITY CONTROLS
     // ==========================================
 
     decreaseButton.addEventListener("click", function () {
+
+        if (availableStock <= 0) return;
 
         quantityInput.value = Math.max(
             1,
@@ -306,21 +391,53 @@ document.addEventListener("DOMContentLoaded", function () {
 
     increaseButton.addEventListener("click", function () {
 
-        quantityInput.value =
-            (parseInt(quantityInput.value, 10) || 1) + 1;
+        if (availableStock <= 0) return;
+
+        const currentQuantity =
+            parseInt(quantityInput.value, 10) || 1;
+
+        if (currentQuantity < availableStock) {
+
+            quantityInput.value = currentQuantity + 1;
+
+        } else {
+
+            showMessage(
+                `Only ${availableStock} item(s) available.`,
+                true
+            );
+
+        }
 
     });
 
     quantityInput.addEventListener("change", function () {
 
-        const quantity = Number(quantityInput.value);
-
-        if (!Number.isSafeInteger(quantity) || quantity < 1) {
-            quantityInput.value = 1;
+        if (availableStock <= 0) {
+            quantityInput.value = 0;
+            return;
         }
 
-    });
+        let quantity = Number(quantityInput.value);
 
+        if (!Number.isSafeInteger(quantity) || quantity < 1) {
+            quantity = 1;
+        }
+
+        if (quantity > availableStock) {
+
+            quantity = availableStock;
+
+            showMessage(
+                `Only ${availableStock} item(s) available.`,
+                true
+            );
+
+        }
+
+        quantityInput.value = quantity;
+
+    });
 
     // ==========================================
     // UPDATE CART BADGE
@@ -372,7 +489,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
     }
 
-
     // ==========================================
     // ADD PRODUCT TO CART
     // ==========================================
@@ -387,12 +503,37 @@ document.addEventListener("DOMContentLoaded", function () {
             'input[name="product_uuid"]'
         ).value;
 
+        // CHECK STOCK
+
+        if (availableStock <= 0) {
+
+            showMessage("This product is currently out of stock.", true);
+
+            return;
+
+        }
+
+        // VALIDATE QUANTITY
+
         if (!Number.isSafeInteger(quantity) || quantity < 1) {
 
             quantityInput.value = 1;
             quantityInput.focus();
 
             showMessage("Please enter a valid quantity.", true);
+
+            return;
+
+        }
+
+        if (quantity > availableStock) {
+
+            showMessage(
+                `Only ${availableStock} item(s) available.`,
+                true
+            );
+
+            quantityInput.value = availableStock;
 
             return;
 
@@ -464,6 +605,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
             }
 
+            // STOCK OR OTHER API ERROR
+
             if (!response.ok || !data.success) {
 
                 throw new Error(
@@ -484,8 +627,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
             showMessage("✓ Added to your cart!");
 
-            // IMPORTANT:
-            // Do not redirect to cart.php.
             // Customer stays on the product page.
 
         } catch (error) {
@@ -496,13 +637,15 @@ document.addEventListener("DOMContentLoaded", function () {
 
         } finally {
 
-            addButton.disabled = false;
-            addButton.innerHTML = originalText;
+            // Keep button disabled if the product is out of stock.
+            if (availableStock > 0) {
+                addButton.disabled = false;
+                addButton.innerHTML = originalText;
+            }
 
         }
 
     });
-
 
     // ==========================================
     // FLYING IMAGE ANIMATION
@@ -581,7 +724,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
     }
 
-
     // ==========================================
     // NOTIFICATION
     // ==========================================
@@ -616,6 +758,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
     }
 
+    // ==========================================
+    // INITIALIZATION
+    // ==========================================
 
     // Refresh badge when product page opens.
     updateCartBadge();

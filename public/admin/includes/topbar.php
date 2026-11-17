@@ -184,6 +184,16 @@ $cartCount = 0;
 
                     </a>
 
+                    <a
+    href="/SoftEcoms/public/users/orderHistory.php"
+    class="nav-icon <?= $isOrdersPage ? 'active' : '' ?>"
+    id="receiptIcon"
+    aria-label="My Orders"
+    title="My Orders"
+>
+    <i class="fas fa-receipt"></i>
+</a>
+
                 </div>
 
             </div>

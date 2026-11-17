@@ -30,7 +30,6 @@ include('./admin/includes/topbar.php');
         </div>
     </section>
 
-
     <!-- CONTACT SECTION -->
     <section class="contact-container">
 
@@ -102,7 +101,6 @@ include('./admin/includes/topbar.php');
 
         </div>
 
-
         <!-- RIGHT SIDE: CONTACT FORM -->
         <div class="contact-form-card">
 
@@ -112,33 +110,40 @@ include('./admin/includes/topbar.php');
                 <p>Fill out the form below and let us know how we can help.</p>
             </div>
 
-            <form id="contactForm">
+            <!-- LOGIN NOTICE -->
+            <div id="contactLoginNotice" style="display:none;">
+                <h3>Login Required</h3>
+                <p>You need to log in to your customer account before sending us a message.</p>
+                <a href="/SoftEcoms/public/login.php">
+                    Login to Your Account
+                </a>
+            </div>
 
-                <div class="contact-form-row">
-
-                    <div class="form-group">
-                        <label for="contactName">Name</label>
-                        <input
-                            type="text"
-                            id="contactName"
-                            name="name"
-                            placeholder="Enter your name"
-                            required
-                        >
-                    </div>
-
-                    <div class="form-group">
-                        <label for="contactEmail">Email Address</label>
-                        <input
-                            type="email"
-                            id="contactEmail"
-                            name="email"
-                            placeholder="Enter your email"
-                            required
-                        >
-                    </div>
-
+            <!-- ACCOUNT INFORMATION -->
+            <div id="contactAccountInfo" style="display:none;">
+                <div class="form-group">
+                    <label for="contactName">Name</label>
+                    <input
+                        type="text"
+                        id="contactName"
+                        placeholder="Your account name"
+                        readonly
+                    >
                 </div>
+
+                <div class="form-group">
+                    <label for="contactEmail">Email Address</label>
+                    <input
+                        type="email"
+                        id="contactEmail"
+                        placeholder="Your account email"
+                        readonly
+                    >
+                </div>
+            </div>
+
+            <!-- CONTACT FORM -->
+            <form id="contactForm" style="display:none;">
 
                 <div class="form-group">
                     <label for="contactSubject">Subject</label>
@@ -147,6 +152,7 @@ include('./admin/includes/topbar.php');
                         id="contactSubject"
                         name="subject"
                         placeholder="What is this about?"
+                        maxlength="200"
                         required
                     >
                 </div>
@@ -158,11 +164,16 @@ include('./admin/includes/topbar.php');
                         name="message"
                         rows="6"
                         placeholder="Write your message here..."
+                        maxlength="5000"
                         required
                     ></textarea>
                 </div>
 
-                <button type="submit" class="contact-submit-btn">
+                <button
+                    type="submit"
+                    class="contact-submit-btn"
+                    id="contactSubmitBtn"
+                >
                     Send Message
                     <i class="fas fa-paper-plane"></i>
                 </button>
@@ -171,17 +182,23 @@ include('./admin/includes/topbar.php');
                     We appreciate your time and look forward to hearing from you.
                 </p>
 
+                <p id="contactError" style="display:none;" role="alert"></p>
+
             </form>
 
-            <div class="contact-success" id="contactSuccess">
+            <!-- SUCCESS MESSAGE -->
+            <div class="contact-success" id="contactSuccess" style="display:none;">
                 <div class="success-icon">
                     <i class="fas fa-check"></i>
                 </div>
+
                 <h3>Thank You!</h3>
+
                 <p>
                     Your message has been submitted successfully.
                     We appreciate you reaching out to SweetClaire!
                 </p>
+
                 <button type="button" id="sendAnotherMessage">
                     Send Another Message
                 </button>
@@ -190,7 +207,6 @@ include('./admin/includes/topbar.php');
         </div>
 
     </section>
-
 
     <!-- BOTTOM MESSAGE -->
     <section class="contact-bottom">
@@ -203,31 +219,7 @@ include('./admin/includes/topbar.php');
 
 </main>
 
-
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-
-    const contactForm = document.getElementById("contactForm");
-    const contactSuccess = document.getElementById("contactSuccess");
-    const sendAnotherMessage = document.getElementById("sendAnotherMessage");
-
-    contactForm.addEventListener("submit", function (event) {
-        event.preventDefault();
-
-        if (!contactForm.checkValidity()) {
-            contactForm.reportValidity();
-            return;
-        }
-
-        contactForm.style.display = "none";
-        contactSuccess.style.display = "block";
-    });
-
-    sendAnotherMessage.addEventListener("click", function () {
-        contactForm.reset();
-        contactSuccess.style.display = "none";
-        contactForm.style.display = "block";
-    });
-
-});
-</script>
+<!-- CONTACT JAVASCRIPT -->
+<script src="assets/js/contact.js"></script>
+</body>
+</html>
