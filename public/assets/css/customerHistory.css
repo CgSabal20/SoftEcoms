@@ -7,7 +7,14 @@
 
 .cus-order-page {
   min-height: 100vh;
-  background: #fff5f2;
+  padding-bottom: 70px;
+  background: linear-gradient(
+    110deg,
+    #efd9c3 0%,
+    #f0d5c6 25%,
+    #f1d0c9 55%,
+    #f3c6d0 100%
+  );
   color: #704638;
   font-family: "Poppins", sans-serif;
 }

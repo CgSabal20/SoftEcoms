@@ -12,11 +12,6 @@ include('includes/topbar.php');
 
 <main class="about">
 
-  <!-- BANNER -->
-  <div class="about-banner">
-    <h1>About Us</h1>
-  </div>
-
   <!-- PANEL -->
   <section class="about-section">
     <div class="about-panel">
@@ -94,8 +89,3 @@ include('includes/topbar.php');
   </section>
 
 </main>
-
-
-
-
-<?php include __DIR__ . "/includes/footer.php"; ?>
