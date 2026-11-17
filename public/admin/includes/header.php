@@ -21,14 +21,22 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
 
 <link rel="stylesheet" href="/SoftEcoms/public/assets/css/product_page.css">
 <link rel="stylesheet" href="/SoftEcoms/public/assets/css/cart_page.css">
-
+<link rel="stylesheet" href="/SoftEcoms/public/assets/css/profile_page.css">
 <!-- added new css links -->
 <link rel="stylesheet" href="/SoftEcoms/public/assets/css/login.css">
 <link rel="stylesheet" href="/SoftEcoms/public/assets/css/register.css">
 <link rel="stylesheet" href="/SoftEcoms/public/assets/css/reset.css">
 <link rel="stylesheet" href="/SoftEcoms/public/assets/css/confirmation.css">
+<link rel="stylesheet" href="/SoftEcoms/public/assets/css/contactUs.css">
+<link rel="stylesheet" href="/SoftEcoms/public/assets/css/checkout.css">
 
-
+<!-- adminInclude --> 
+ <link rel="stylesheet" href="/SoftEcoms/public/assets/css/adminSidebar.css">
+<!-- admin -->
+<link rel="stylesheet" href="/SoftEcoms/public/assets/css/dashboardAdmin.css">
+<link rel="stylesheet" href="/SoftEcoms/public/assets/css/customerHistory.css">
+<link rel="stylesheet" href="/SoftEcoms/public/assets/css/customerAdmin.css">
+<link rel="stylesheet" href="/SoftEcoms/public/assets/css/adminProduct.css">
 
 <!-- -external links that I used -carlo -->
 <link rel="preconnect" href="https://googleapis.com">
