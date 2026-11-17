@@ -1,0 +1,168 @@
+
+.about {
+  min-height: 100vh;
+  background: linear-gradient(
+    90deg,
+    #EFD9C3 0%,
+    #F0D5C6 22%,
+    #F1D0C9 50%,
+    #F3CACD 80%,
+    #F3C6D0 100%
+  );
+    /* ,
+    url("/SoftEcoms/public/assets/img/strawberry_theme.jpg") center / cover no-repeat; */
+}
+
+/* ABOUT BANNER */
+.about-banner {
+  height: 110px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    linear-gradient(rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.45)),
+    url("/SoftEcoms/public/assets/img/eclair_coffee.jpg") center / cover no-repeat;
+}
+
+.about-banner h1 {
+  color: #fff;
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+/* ABOUT SECTION + PANEL */
+.about-section {
+  padding: 1px 16px 0px;
+}
+
+.about-section .about-panel {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  background: #fff;
+  padding: 40px 48px 56px;
+}
+
+.about-section .about-tagline {
+  text-align: center;
+  color: #b3202a;
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0 0 40px;
+}
+
+
+.about-section .about-intro {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+  align-items: start;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.about-section .about-text h2 {
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0 0 12px;
+}
+
+.about-section .about-text p {
+  text-align: justify;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  margin: 0 0 14px;
+}
+
+.about-section .about-text section + section {
+  margin-top: 28px;
+}
+
+.about-section .about-photo img {
+  width: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.about-section .about-bake {
+  text-align: center;
+  max-width: 1000px;
+  margin: 72px auto 0;
+}
+
+.about-section .about-bake h2 {
+  color: #d62f3a;
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin: 0 0 8px;
+}
+
+.about-section .about-mascot {
+  width: 90px;
+  height: auto;
+  display: block;
+  margin: 0 auto 8px;
+}
+
+.about-section .about-bake-intro {
+  max-width: 560px;
+  margin: 0 auto 32px;
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
+/* THE 3 PROMISES */
+.about-section .about-promises {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+}
+
+.about-section .promise {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+
+.about-section .promise-img {
+  width: 100%;
+  max-width: 200px;
+  aspect-ratio: 3 / 4;
+  background: #d9d9d9;
+  border-radius: 16px;
+  object-fit: cover;
+  margin-bottom: 16px;
+}
+
+.about-section .promise h3 {
+  font-size: 0.9rem;
+  font-weight: 700;
+  margin: 0 0 6px;
+}
+
+.about-section .promise p {
+  max-width: 220px;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* MOBILE */
+@media (max-width: 768px) {
+  .about-section .about-panel {
+    padding: 24px 16px 40px;
+  }
+
+  .about-section .about-intro {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .about-section .about-promises {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+}
