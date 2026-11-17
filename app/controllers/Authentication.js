@@ -1,7 +1,5 @@
 const bcrypt = require("bcrypt");
 const crypto = require("crypto");
-const fs = require("fs");
-const path = require("path");
 
 const User = require("../models/User");
 const {
@@ -196,6 +194,7 @@ class Authentication {
       const email = String(req.body?.email || "")
         .trim()
         .toLowerCase();
+
       const password = req.body?.password;
 
       if (!email || !password) {
@@ -294,7 +293,6 @@ class Authentication {
           middleName: user.middleName || null,
           username: user.username,
           email: user.emailAddress || user.email || null,
-          profile: user.profile || null,
           profileComplete,
         };
 
@@ -309,7 +307,7 @@ class Authentication {
 
           const redirect =
             user.role === "admin"
-              ? "/SoftEcoms/public/admin/adminDashboard.php"
+              ? "/SoftEcoms/public/admin/index.php"
               : "/SoftEcoms/public/index.php";
 
           return res.status(200).json({
@@ -355,12 +353,10 @@ class Authentication {
       }
 
       const rawToken = crypto.randomBytes(32).toString("hex");
-
       const tokenHash = crypto
         .createHash("sha256")
         .update(rawToken)
         .digest("hex");
-
       const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
 
       await this.userModel.savePasswordResetToken(
@@ -409,18 +405,14 @@ class Authentication {
       }
 
       if (password !== confirmPassword) {
-        return res.status(400).json({
-          message: "Passwords do not match.",
-        });
+        return res.status(400).json({ message: "Passwords do not match." });
       }
 
       const tokenHash = crypto
         .createHash("sha256")
         .update(rawToken)
         .digest("hex");
-
       const hashedPassword = await bcrypt.hash(password, 12);
-
       const changed = await this.userModel.resetPasswordWithToken(
         tokenHash,
         hashedPassword,
@@ -440,7 +432,6 @@ class Authentication {
       });
     } catch (error) {
       console.error("Reset password error:", error);
-
       return res.status(500).json({
         message: "Could not reset your password. Please try again.",
       });
@@ -547,8 +538,7 @@ class Authentication {
             barangay,
             city,
             role,
-            accountStatus,
-            profile
+            accountStatus
          FROM users
          WHERE id = ?
          LIMIT 1`,
@@ -585,7 +575,6 @@ class Authentication {
         city: user.city,
         role: user.role,
         accountStatus: user.accountStatus,
-        profile: user.profile || null,
         profileComplete,
       };
 
@@ -630,6 +619,7 @@ class Authentication {
       }
 
       const contactNumber = String(req.body?.contactNumber || "").trim();
+
       const street = String(req.body?.street || "").trim();
       const barangay = String(req.body?.barangay || "").trim();
       const city = String(req.body?.city || "").trim();
@@ -653,22 +643,24 @@ class Authentication {
         });
       }
 
-      await this.db.execute(
+      // Use contactNumber, matching your database schema.
+      const [result] = await this.db.execute(
         `UPDATE users
-         SET contactNumber = ?,
-             street = ?,
-             barangay = ?,
-             city = ?
-         WHERE id = ?
-           AND role = 'customer'`,
+             SET contactNumber = ?,
+                 street = ?,
+                 barangay = ?,
+                 city = ?
+             WHERE id = ?
+               AND role = 'customer'`,
         [contactNumber, street, barangay, city, userId],
       );
 
+      // Confirm the account exists, even if no values changed.
       const [rows] = await this.db.execute(
         `SELECT id, uuid, contactNumber, street, barangay, city, role
-         FROM users
-         WHERE id = ?
-         LIMIT 1`,
+             FROM users
+             WHERE id = ?
+             LIMIT 1`,
         [userId],
       );
 
@@ -723,283 +715,6 @@ class Authentication {
       return res.status(500).json({
         success: false,
         message: "Could not save your profile details.",
-      });
-    }
-  };
-
-  updateProfile = async (req, res) => {
-    let savedImagePath = null;
-
-    try {
-      if (!req.session || !req.session.authUser) {
-        return res.status(401).json({
-          success: false,
-          message: "Please log in first.",
-        });
-      }
-
-      const userId = req.session.user_id || req.session.authUser.user_id;
-
-      if (!userId) {
-        return res.status(401).json({
-          success: false,
-          message: "User session is missing an ID.",
-        });
-      }
-
-      const firstName = String(req.body?.firstName || "").trim();
-      const lastName = String(req.body?.lastName || "").trim();
-
-      const emailAddress = String(
-        req.body?.emailAddress ||
-          req.session.authUser.emailAddress ||
-          req.session.authUser.email ||
-          "",
-      )
-        .trim()
-        .toLowerCase();
-
-      const contactNumber = String(req.body?.contactNumber || "").trim();
-      const street = String(req.body?.street || "").trim();
-      const barangay = String(req.body?.barangay || "").trim();
-      const city = String(req.body?.city || "").trim();
-
-      if (
-        !firstName ||
-        !lastName ||
-        !emailAddress ||
-        !contactNumber ||
-        !street ||
-        !barangay ||
-        !city
-      ) {
-        return res.status(400).json({
-          success: false,
-          message: "Please complete all required profile fields.",
-        });
-      }
-
-      if (
-        firstName.length > 100 ||
-        lastName.length > 100 ||
-        emailAddress.length > 254 ||
-        contactNumber.length > 30 ||
-        street.length > 255 ||
-        barangay.length > 100 ||
-        city.length > 100
-      ) {
-        return res.status(400).json({
-          success: false,
-          message: "One or more fields exceed the allowed length.",
-        });
-      }
-
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailAddress)) {
-        return res.status(400).json({
-          success: false,
-          message: "Please enter a valid email address.",
-        });
-      }
-
-      const [emailRows] = await this.db.execute(
-        "SELECT id FROM users WHERE emailAddress = ? AND id <> ? LIMIT 1",
-        [emailAddress, userId],
-      );
-
-      if (emailRows.length) {
-        return res.status(409).json({
-          success: false,
-          message: "That email address is already used by another account.",
-        });
-      }
-
-      const [currentRows] = await this.db.execute(
-        "SELECT id, profile FROM users WHERE id = ? AND role = 'customer' LIMIT 1",
-        [userId],
-      );
-
-      if (!currentRows.length) {
-        return res.status(404).json({
-          success: false,
-          message: "Customer account not found.",
-        });
-      }
-
-      let profile = currentRows[0].profile || null;
-      const profileImage = req.body?.profileImage;
-
-      if (profileImage) {
-        const match =
-          /^data:image\/(jpeg|png|webp);base64,([A-Za-z0-9+/=]+)$/.exec(
-            String(profileImage),
-          );
-
-        if (!match) {
-          return res.status(400).json({
-            success: false,
-            message:
-              "The profile photo must be a valid JPG, PNG, or WEBP image.",
-          });
-        }
-
-        const extension = match[1] === "jpeg" ? "jpg" : match[1];
-        const imageBuffer = Buffer.from(match[2], "base64");
-
-        if (!imageBuffer.length || imageBuffer.length > 5 * 1024 * 1024) {
-          return res.status(400).json({
-            success: false,
-            message: "The profile photo must be 5 MB or smaller.",
-          });
-        }
-
-        const isJpeg =
-          extension === "jpg" &&
-          imageBuffer[0] === 0xff &&
-          imageBuffer[1] === 0xd8 &&
-          imageBuffer[2] === 0xff;
-
-        const isPng =
-          extension === "png" &&
-          imageBuffer
-            .subarray(0, 8)
-            .equals(
-              Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
-            );
-
-        const isWebp =
-          extension === "webp" &&
-          imageBuffer.toString("ascii", 0, 4) === "RIFF" &&
-          imageBuffer.toString("ascii", 8, 12) === "WEBP";
-
-        if (!isJpeg && !isPng && !isWebp) {
-          return res.status(400).json({
-            success: false,
-            message: "The uploaded file is not a valid image.",
-          });
-        }
-
-        const uploadDirectory = path.join(
-          __dirname,
-          "../../public/assets/profile_img",
-        );
-
-        await fs.promises.mkdir(uploadDirectory, { recursive: true });
-
-        const filename = `profile_${userId}_${crypto
-          .randomBytes(8)
-          .toString("hex")}.${extension}`;
-
-        savedImagePath = path.join(uploadDirectory, filename);
-
-        await fs.promises.writeFile(savedImagePath, imageBuffer);
-
-        profile = filename;
-      }
-
-      await this.db.execute(
-        `UPDATE users
-         SET firstName = ?,
-             lastName = ?,
-             emailAddress = ?,
-             contactNumber = ?,
-             street = ?,
-             barangay = ?,
-             city = ?,
-             profile = ?
-         WHERE id = ?
-           AND role = 'customer'`,
-        [
-          firstName,
-          lastName,
-          emailAddress,
-          contactNumber,
-          street,
-          barangay,
-          city,
-          profile,
-          userId,
-        ],
-      );
-
-      // Remove the old image only after the database update succeeds.
-      const oldProfile = currentRows[0].profile;
-
-      if (
-        savedImagePath &&
-        oldProfile &&
-        path.basename(oldProfile) === oldProfile
-      ) {
-        const oldPath = path.join(
-          __dirname,
-          "../../public/assets/profile_img",
-          oldProfile,
-        );
-
-        if (oldPath !== savedImagePath) {
-          await fs.promises.unlink(oldPath).catch(() => {});
-        }
-      }
-
-      const profileComplete = Boolean(
-        contactNumber && street && barangay && city,
-      );
-
-      req.session.authUser = {
-        ...req.session.authUser,
-        user_id: Number(userId),
-        firstName,
-        lastName,
-        email: emailAddress,
-        emailAddress,
-        contactNumber,
-        street,
-        barangay,
-        city,
-        profile,
-        profileComplete,
-      };
-
-      req.session.save((sessionError) => {
-        if (sessionError) {
-          console.error("Profile session save error:", sessionError);
-
-          return res.status(500).json({
-            success: false,
-            message:
-              "Profile updated, but the session could not be refreshed. Please reload.",
-          });
-        }
-
-        return res.status(200).json({
-          success: true,
-          message: "Your profile has been updated successfully.",
-          user: {
-            firstName,
-            lastName,
-            emailAddress,
-            contactNumber,
-            street,
-            barangay,
-            city,
-            profile,
-            profileImageUrl: profile
-              ? `/SoftEcoms/public/assets/profile_img/${encodeURIComponent(profile)}`
-              : null,
-          },
-        });
-      });
-    } catch (error) {
-      if (savedImagePath) {
-        await fs.promises.unlink(savedImagePath).catch(() => {});
-      }
-
-      console.error("Update profile error:", error);
-
-      return res.status(500).json({
-        success: false,
-        message: "Could not update your profile.",
-        error:
-          process.env.NODE_ENV === "development" ? error.message : undefined,
       });
     }
   };
