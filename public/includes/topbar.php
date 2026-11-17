@@ -16,21 +16,35 @@ $urlPage = strtolower(
     basename(parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH))
 );
 
-// Use the actual PHP script filename, with URL fallback.
 $current_page = !empty($scriptPage) ? $scriptPage : $urlPage;
 
 $isHomePage = ($current_page === 'index.php');
-$isMenuPage = in_array($current_page, ['productpage.php', 'product.php'], true);
-$isContactPage = ($current_page === 'contactus.php');
-$isOrdersPage = ($current_page === 'order.php');
-$isAboutPage = ($current_page === 'aboutus.php');
-$isCartPage = ($current_page === 'cart.php');
 
-$cartCount = 0;
+$isMenuPage = in_array(
+    $current_page,
+    ['productpage.php', 'product.php'],
+    true
+);
+
+$isContactPage = ($current_page === 'contactus.php');
+
+$isOrdersPage = in_array(
+    $current_page,
+    ['order.php', 'orderhistory.php'],
+    true
+);
+
+$isAboutPage = ($current_page === 'aboutus.php');
+
+$isCartPage = ($current_page === 'cart.php');
 ?>
 
 <nav class="navbar navbar-expand-lg">
     <div class="container">
+
+        <!-- ==========================================
+             LOGO
+        ========================================== -->
 
         <a class="navbar-brand" href="/SoftEcoms/public/index.php">
 
@@ -57,6 +71,10 @@ $cartCount = 0;
             'forgetpassword.php'
         ], true)) : ?>
 
+            <!-- ==========================================
+                 MOBILE NAVBAR TOGGLE
+            ========================================== -->
+
             <button
                 class="navbar-toggler"
                 type="button"
@@ -70,6 +88,10 @@ $cartCount = 0;
             </button>
 
             <div class="collapse navbar-collapse" id="navbarScroll">
+
+                <!-- ==========================================
+                     NAVIGATION LINKS
+                ========================================== -->
 
                 <ul class="navbar-nav ms-lg-auto my-2 my-lg-0">
 
@@ -95,7 +117,7 @@ $cartCount = 0;
                         </a>
                     </li>
 
-                    <!-- CONTACT US -->
+                    <!-- CONTACT -->
                     <li class="nav-item">
                         <a
                             class="nav-link <?= $isContactPage ? 'active' : '' ?>"
@@ -130,10 +152,13 @@ $cartCount = 0;
 
                 </ul>
 
+                <!-- ==========================================
+                     ACCOUNT, RECEIPT AND CART ICONS
+                ========================================== -->
+
                 <div class="d-flex align-items-center gap-3">
 
                     <!-- ACCOUNT DROPDOWN -->
-
                     <div id="accountNav" style="visibility: hidden;">
 
                         <a
@@ -151,14 +176,13 @@ $cartCount = 0;
 
                     </div>
 
-
                     <!-- SHOPPING CART -->
-
                     <a
                         href="/SoftEcoms/public/cart.php"
                         class="nav-icon <?= $isCartPage ? 'active' : '' ?>"
                         id="cartIcon"
                         aria-label="Shopping cart"
+                        title="Shopping Cart"
                     >
 
                         <svg
@@ -169,11 +193,9 @@ $cartCount = 0;
                             class="bi bi-cart"
                             viewBox="0 0 16 16"
                         >
-
                             <path d="M0 1.5A.5.5 0 0 1 .5 1H2a.5.5 0 0 1 .485.379L2.89 3H14.5a.5.5 0 0 1 .491.592l-1.5 8A.5.5 0 0 1 13 12H4a.5.5 0 0 1-.491-.408L2.01 3.607 1.61 2H.5a.5.5 0 0 1-.5-.5M3.102 4l1.313 7h8.17l1.313-7z" />
 
                             <path d="M5 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4m7 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4" />
-
                         </svg>
 
                         <span
@@ -193,12 +215,14 @@ $cartCount = 0;
     </div>
 </nav>
 
+<!-- ==========================================
+     NAVBAR JAVASCRIPT
+========================================== -->
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
 
     const API_URL = "http://localhost:3000";
-
 
     // ==========================================
     // UPDATE CART COUNTER
@@ -253,13 +277,10 @@ document.addEventListener("DOMContentLoaded", function () {
             console.error("Cart counter error:", error);
 
         }
-
     }
-
 
     // Refresh cart count on every page
     refreshCartCount();
-
 
     // ==========================================
     // ACCOUNT NAVIGATION
@@ -288,8 +309,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
             );
 
-            // Guest user: display Login button.
-            if (response.status === 100 || response.status === 401) {
+            // Guest user
+            if (response.status === 401) {
                 showAccountNav();
                 return;
             }
@@ -308,8 +329,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 return;
             }
 
-
+            // ==========================================
             // ACCOUNT DROPDOWN
+            // ==========================================
 
             const wrapper = document.createElement("div");
             wrapper.className = "nav-item dropdown";
@@ -326,19 +348,15 @@ document.addEventListener("DOMContentLoaded", function () {
             toggle.textContent =
                 user.username || user.fullName || "My Account";
 
-
             const menu = document.createElement("ul");
             menu.className = "dropdown-menu dropdown-menu-end";
 
-
             // PROFILE
-
             const profileItem = document.createElement("li");
 
             const profileLink = document.createElement("a");
 
             profileLink.className = "dropdown-item";
-
             profileLink.href =
                 "/SoftEcoms/public/users/profilePage.php";
 
@@ -346,30 +364,22 @@ document.addEventListener("DOMContentLoaded", function () {
 
             profileItem.appendChild(profileLink);
 
-
             // DIVIDER
-
             const dividerItem = document.createElement("li");
 
             const divider = document.createElement("hr");
-
             divider.className = "dropdown-divider";
 
             dividerItem.appendChild(divider);
 
-
             // SIGN OUT
-
             const logoutItem = document.createElement("li");
 
             const logoutButton = document.createElement("button");
 
             logoutButton.type = "button";
-
             logoutButton.className = "dropdown-item";
-
             logoutButton.textContent = "Sign Out";
-
 
             logoutButton.addEventListener("click", async function () {
 
@@ -408,9 +418,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             logoutItem.appendChild(logoutButton);
 
-
             // APPEND DROPDOWN
-
             menu.append(
                 profileItem,
                 dividerItem,
@@ -430,7 +438,6 @@ document.addEventListener("DOMContentLoaded", function () {
             showAccountNav();
 
         }
-
     }
 
     loadAccountNav();

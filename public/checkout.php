@@ -404,6 +404,10 @@ include('./admin/includes/topbar.php');
                                     No delivery location selected yet.
                                 </small>
 
+                                <div id="deliveryEstimate" class="map-description" aria-live="polite">
+                                    Select your delivery location to calculate the delivery fee.
+                                </div>
+
                                 <input
                                     type="hidden"
                                     id="deliveryLatitude"
@@ -583,6 +587,11 @@ include('./admin/includes/topbar.php');
                             <strong id="summaryTax">₱0.00</strong>
                         </div>
 
+                        <div class="summary-row">
+                            <span>Delivery Fee</span>
+                            <strong id="summaryDeliveryFee">Select location</strong>
+                        </div>
+
                         <div class="summary-divider"></div>
 
                         <div class="summary-total">
@@ -705,10 +714,13 @@ document.addEventListener("DOMContentLoaded", function () {
         );
     ?>;
 
-    // Initial map location: Bislig area.
-    // Change this to your actual shop's service area.
+    // Sweet! shop location (fixed delivery origin).
+    // The map opens centered on the shop. Customers must select
+    // their own delivery location before placing an order.
 
-    const defaultLocation = [8.8794, 125.0726];
+    const SHOP_LATITUDE = 8.474078;
+    const SHOP_LONGITUDE = 124.644512;
+    const defaultLocation = [SHOP_LATITUDE, SHOP_LONGITUDE];
 
     // ==========================================
     // HTML ELEMENTS
@@ -750,6 +762,12 @@ document.addEventListener("DOMContentLoaded", function () {
     const coordinatesLabel =
         document.getElementById("selectedCoordinates");
 
+    const deliveryEstimate =
+        document.getElementById("deliveryEstimate");
+
+    const summaryDeliveryFee =
+        document.getElementById("summaryDeliveryFee");
+
     const useCurrentLocationButton =
         document.getElementById("useCurrentLocation");
 
@@ -773,6 +791,10 @@ document.addEventListener("DOMContentLoaded", function () {
     let deliveryMarker = null;
 
     let isProcessingOrder = false;
+
+    // Null means no eligible delivery location has been selected.
+    let currentDeliveryFeeCents = null;
+    let currentDistanceKm = null;
 
     const orderModalElement =
         document.getElementById("orderConfirmModal");
@@ -858,6 +880,160 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // ==========================================
+    // LOAD CUSTOMER PROFILE
+    // ==========================================
+
+    async function loadCustomerProfile() {
+
+        const data = await apiRequest("/me");
+        const user = data.user || {};
+
+        fullNameInput.value = [
+            user.firstName,
+            user.middleName,
+            user.lastName
+        ].filter(Boolean).join(" ");
+
+        emailInput.value = user.emailAddress || "";
+        phoneInput.value = user.contactNumber || "";
+
+        const savedAddress = [
+            user.street,
+            user.barangay,
+            user.city
+        ]
+            .filter(value => value && String(value).trim())
+            .join(", ");
+
+        // The profile address is only a default. The customer can edit it.
+        if (!addressInput.value.trim()) {
+            addressInput.value = savedAddress;
+        }
+
+    }
+
+    // ==========================================
+    // REVERSE GEOCODING
+    // Convert map coordinates into a readable place/address
+    // ==========================================
+
+    let reverseGeocodeController = null;
+    let reverseGeocodeTimer = null;
+    let lastGeocodedCoordinates = "";
+
+    async function reverseGeocode(lat, lng) {
+
+        const coordinatesKey =
+            Number(lat).toFixed(6) + "," + Number(lng).toFixed(6);
+
+        clearTimeout(reverseGeocodeTimer);
+
+        reverseGeocodeTimer = setTimeout(async function () {
+
+            try {
+
+                if (reverseGeocodeController) {
+                    reverseGeocodeController.abort();
+                }
+
+                reverseGeocodeController = new AbortController();
+
+                coordinatesLabel.textContent =
+                    "Finding the address for your selected location...";
+                coordinatesLabel.style.color = "#8A7770";
+
+                const url = new URL(
+                    "https://nominatim.openstreetmap.org/reverse"
+                );
+
+                url.searchParams.set("format", "jsonv2");
+                url.searchParams.set("lat", lat);
+                url.searchParams.set("lon", lng);
+                url.searchParams.set("zoom", "18");
+                url.searchParams.set("addressdetails", "1");
+                url.searchParams.set("namedetails", "1");
+                url.searchParams.set("accept-language", "en");
+
+                const response = await fetch(url.toString(), {
+                    signal: reverseGeocodeController.signal,
+                    headers: { "Accept": "application/json" }
+                });
+
+                if (!response.ok) {
+                    throw new Error("Address lookup failed.");
+                }
+
+                const result = await response.json();
+
+                if (!result || !result.display_name) {
+                    throw new Error("No mapped address was found.");
+                }
+
+                const currentCoordinates =
+                    Number(latitudeInput.value).toFixed(6) + "," +
+                    Number(longitudeInput.value).toFixed(6);
+
+                // Ignore a response if the customer has moved the pin again.
+                if (currentCoordinates !== coordinatesKey) {
+                    return;
+                }
+
+                const placeName =
+                    result.name ||
+                    (result.namedetails && result.namedetails.name) ||
+                    (result.address && (
+                        result.address.amenity ||
+                        result.address.hotel ||
+                        result.address.shop ||
+                        result.address.restaurant ||
+                        result.address.tourism ||
+                        result.address.building ||
+                        result.address.leisure ||
+                        result.address.office
+                    ));
+
+                let readableAddress = result.display_name;
+
+                if (placeName) {
+                    const remaining = result.display_name
+                        .split(",")
+                        .map(part => part.trim())
+                        .filter(Boolean)
+                        .filter(part =>
+                            part.toLowerCase() !== String(placeName).toLowerCase()
+                        );
+
+                    readableAddress = [placeName, ...remaining].join(", ");
+                }
+
+                // A map selection deliberately replaces the current delivery
+                // address. The customer may edit it again before ordering.
+                addressInput.value = readableAddress;
+                lastGeocodedCoordinates = coordinatesKey;
+
+                coordinatesLabel.textContent =
+                    "Selected place: " + readableAddress;
+                coordinatesLabel.style.color = "#198754";
+
+            } catch (error) {
+
+                if (error.name === "AbortError") {
+                    return;
+                }
+
+                console.error("Reverse geocoding error:", error);
+
+                coordinatesLabel.textContent =
+                    "Location pinned, but no readable address was found. Please enter the address manually.";
+                coordinatesLabel.style.color = "#dc3545";
+
+            }
+
+        }, 1100);
+
+    }
+
+    // ==========================================
     // DELIVERY MAP
     // ==========================================
 
@@ -924,16 +1100,13 @@ document.addEventListener("DOMContentLoaded", function () {
     function setDeliveryLocation(lat, lng) {
 
         latitudeInput.value = Number(lat).toFixed(8);
-
         longitudeInput.value = Number(lng).toFixed(8);
 
         coordinatesLabel.textContent =
-            "Selected location: " +
-            Number(lat).toFixed(6) +
-            ", " +
+            "Selected coordinates: " +
+            Number(lat).toFixed(6) + ", " +
             Number(lng).toFixed(6);
-
-        coordinatesLabel.style.color = "#198754";
+        coordinatesLabel.style.color = "#8A7770";
 
         if (!deliveryMarker) {
 
@@ -942,19 +1115,11 @@ document.addEventListener("DOMContentLoaded", function () {
                 { draggable: true }
             ).addTo(deliveryMap);
 
-            deliveryMarker.bindPopup(
-                "Your delivery location"
-            );
+            deliveryMarker.bindPopup("Your delivery location");
 
             deliveryMarker.on("dragend", function () {
-
                 const position = deliveryMarker.getLatLng();
-
-                setDeliveryLocation(
-                    position.lat,
-                    position.lng
-                );
-
+                setDeliveryLocation(position.lat, position.lng);
             });
 
         } else {
@@ -963,7 +1128,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
         }
 
-        deliveryMap.setView([lat, lng], 17);
+        deliveryMap.setView([lat, lng], 18);
+
+        // Recalculate the estimate whenever the pin changes.
+        updateDeliveryEstimate();
+
+        reverseGeocode(lat, lng);
 
     }
 
@@ -1047,23 +1217,29 @@ document.addEventListener("DOMContentLoaded", function () {
     resetMapButton.addEventListener("click", function () {
 
         latitudeInput.value = "";
-
         longitudeInput.value = "";
+        lastGeocodedCoordinates = "";
+
+        clearTimeout(reverseGeocodeTimer);
+
+        if (reverseGeocodeController) {
+            reverseGeocodeController.abort();
+        }
 
         coordinatesLabel.textContent =
             "No delivery location selected yet.";
-
         coordinatesLabel.style.color = "#8A7770";
 
         if (deliveryMarker) {
-
             deliveryMap.removeLayer(deliveryMarker);
-
             deliveryMarker = null;
-
         }
 
         deliveryMap.setView(defaultLocation, 14);
+
+        currentDeliveryFeeCents = null;
+        currentDistanceKm = null;
+        updateDeliveryEstimate();
 
     });
 
@@ -1108,6 +1284,108 @@ document.addEventListener("DOMContentLoaded", function () {
         );
 
     });
+
+    // ==========================================
+    // DELIVERY DISTANCE (HAVERSINE FORMULA)
+    // ==========================================
+
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+
+        const earthRadiusKm = 6371;
+
+        function toRadians(degrees) {
+            return degrees * Math.PI / 180;
+        }
+
+        const dLat = toRadians(lat2 - lat1);
+        const dLon = toRadians(lon2 - lon1);
+
+        const a =
+            Math.sin(dLat / 2) ** 2 +
+            Math.cos(toRadians(lat1)) *
+            Math.cos(toRadians(lat2)) *
+            Math.sin(dLon / 2) ** 2;
+
+        const c = 2 * Math.atan2(
+            Math.sqrt(a),
+            Math.sqrt(1 - a)
+        );
+
+        return earthRadiusKm * c;
+    }
+
+    // ==========================================
+    // DELIVERY FEE RULES
+    // ==========================================
+
+    function calculateDeliveryFee(distanceKm) {
+
+        if (distanceKm <= 2) return 15;
+        if (distanceKm <= 5) return 30;
+        if (distanceKm <= 8) return 75;
+        if (distanceKm <= 10) return 90;
+
+        return null;
+    }
+
+    // ==========================================
+    // UPDATE DELIVERY ESTIMATE
+    // ==========================================
+
+    function updateDeliveryEstimate() {
+
+        const lat = Number(latitudeInput.value);
+        const lng = Number(longitudeInput.value);
+
+        if (
+            latitudeInput.value === "" ||
+            longitudeInput.value === "" ||
+            !Number.isFinite(lat) ||
+            !Number.isFinite(lng)
+        ) {
+            currentDistanceKm = null;
+            currentDeliveryFeeCents = null;
+
+            deliveryEstimate.textContent =
+                "Select your delivery location to calculate the delivery fee.";
+            deliveryEstimate.style.color = "#8A7770";
+            summaryDeliveryFee.textContent = "Select location";
+
+            renderSummary();
+            return;
+        }
+
+        const distanceKm = calculateDistance(
+            SHOP_LATITUDE,
+            SHOP_LONGITUDE,
+            lat,
+            lng
+        );
+
+        const fee = calculateDeliveryFee(distanceKm);
+        currentDistanceKm = distanceKm;
+
+        if (fee === null) {
+            currentDeliveryFeeCents = null;
+
+            deliveryEstimate.textContent =
+                `Your location is ${distanceKm.toFixed(2)} km away. ` +
+                "Sorry, this location is outside our 10 km delivery range.";
+            deliveryEstimate.style.color = "#dc3545";
+            summaryDeliveryFee.textContent = "Unavailable";
+        } else {
+            currentDeliveryFeeCents = fee * 100;
+
+            deliveryEstimate.textContent =
+                `Distance: ${distanceKm.toFixed(2)} km | ` +
+                `Delivery fee: ₱${formatPrice(fee)}`;
+            deliveryEstimate.style.color = "#198754";
+            summaryDeliveryFee.textContent =
+                "₱" + formatPrice(fee);
+        }
+
+        renderSummary();
+    }
 
     // ==========================================
     // RENDER ORDER SUMMARY
@@ -1192,7 +1470,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
         const taxCents = Math.round(subtotalCents * 0.12);
 
-        const totalCents = subtotalCents + taxCents;
+        // The browser estimate is for display only. The Node.js
+        // checkout controller recalculates and validates the fee.
+        const deliveryFeeCents = currentDeliveryFeeCents ?? 0;
+
+        const totalCents =
+            subtotalCents + taxCents + deliveryFeeCents;
 
         document.getElementById("summaryCount").textContent =
             totalQuantity;
@@ -1202,6 +1485,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
         document.getElementById("summaryTax").textContent =
             "₱" + formatPrice(taxCents / 100);
+
+        summaryDeliveryFee.textContent =
+            currentDeliveryFeeCents === null
+                ? (currentDistanceKm !== null ? "Unavailable" : "Select location")
+                : "₱" + formatPrice(currentDeliveryFeeCents / 100);
 
         document.getElementById("summaryTotal").textContent =
             "₱" + formatPrice(totalCents / 100);
@@ -1230,6 +1518,10 @@ document.addEventListener("DOMContentLoaded", function () {
             }
 
             const data = await apiRequest("/cart");
+
+            // Pre-fill customer details from the logged-in profile.
+            // This does not save checkout edits back to the profile.
+            await loadCustomerProfile();
 
             const allItems = Array.isArray(data.cart)
                 ? data.cart
@@ -1358,6 +1650,23 @@ document.addEventListener("DOMContentLoaded", function () {
             Swal.fire(
                 "Location Required",
                 "Please select your delivery location on the map.",
+                "warning"
+            );
+
+            return false;
+
+        }
+
+        if (
+            currentDistanceKm === null ||
+            currentDeliveryFeeCents === null
+        ) {
+
+            Swal.fire(
+                "Delivery Unavailable",
+                currentDistanceKm !== null
+                    ? "Your selected location is outside our 10 km delivery range."
+                    : "Please select your delivery location again so we can calculate the delivery fee.",
                 "warning"
             );
 

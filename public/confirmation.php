@@ -1,4 +1,3 @@
-
 <?php
 session_start();
 
@@ -41,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             throw new Exception("No ordered products found.");
         }
 
-        // SAVE ORDER DETAILS
+        // SAVE ORDER DETAILS IN SESSION
         $_SESSION['order_details'] = [
             'order_number' => $order['orderNumber'],
             'order_date' => $order['order_date'] ?? date('Y-m-d H:i:s'),
@@ -58,7 +57,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'city' => $order['city'] ?? '',
 
             'subtotal' => (float)($order['subtotal'] ?? 0),
+            'tax' => (float)($order['tax'] ?? 0),
             'delivery_fee' => (float)($order['delivery_fee'] ?? 0),
+            'delivery_distance_km' => (float)($order['delivery_distance_km'] ?? 0),
             'total' => (float)($order['total'] ?? $order['totalPrice'] ?? 0),
 
             'status' => $order['status'] ?? 'pending'
@@ -118,7 +119,6 @@ include('./admin/includes/header.php');
 include('./admin/includes/topbar.php');
 ?>
 
-<link rel="stylesheet" href="assets/css/checkout.css">
 
 <div class="confirmation-container">
 
@@ -180,7 +180,7 @@ include('./admin/includes/topbar.php');
             <span>Order Number</span>
 
             <h3>
-                <?= htmlspecialchars($order['order_number']) ?>
+                <?= htmlspecialchars((string)$order['order_number']) ?>
             </h3>
 
         </div>
@@ -190,52 +190,65 @@ include('./admin/includes/topbar.php');
             <div>
                 <span>Order Date</span>
                 <strong>
-                    <?= htmlspecialchars($order['order_date']) ?>
+                    <?= htmlspecialchars((string)$order['order_date']) ?>
                 </strong>
             </div>
 
             <div>
                 <span>Customer Name</span>
                 <strong>
-                    <?= htmlspecialchars($order['full_name']) ?>
+                    <?= htmlspecialchars((string)$order['full_name']) ?>
                 </strong>
             </div>
 
             <div>
                 <span>Phone Number</span>
                 <strong>
-                    <?= htmlspecialchars($order['phone']) ?>
+                    <?= htmlspecialchars((string)$order['phone']) ?>
                 </strong>
             </div>
 
             <div>
                 <span>Email Address</span>
                 <strong>
-                    <?= htmlspecialchars($order['email']) ?>
+                    <?= htmlspecialchars((string)$order['email']) ?>
                 </strong>
             </div>
 
             <div>
                 <span>Payment Method</span>
                 <strong>
-                    <?= htmlspecialchars($order['payment_method']) ?>
+                    <?= htmlspecialchars((string)$order['payment_method']) ?>
                 </strong>
             </div>
 
             <div>
                 <span>Fulfillment</span>
                 <strong>
-                    <?= htmlspecialchars(ucfirst($order['fulfillment'])) ?>
+                    <?= htmlspecialchars(ucfirst((string)$order['fulfillment'])) ?>
                 </strong>
             </div>
 
-            <?php if ($order['fulfillment'] === 'delivery') { ?>
+            <?php if (($order['fulfillment'] ?? '') === 'delivery') { ?>
 
                 <div>
                     <span>Delivery Address</span>
 
                     <strong>
-                        <?= htmlspecialchars($order['street']) ?>
+                        <?= htmlspecialchars((string)$order['street']) ?>
+                        <?php if (!empty($order['barangay'])) { ?>
+                            , <?= htmlspecialchars((string)$order['barangay']) ?>
+                        <?php } ?>
+                        <?php if (!empty($order['city'])) { ?>
+                            , <?= htmlspecialchars((string)$order['city']) ?>
+                        <?php } ?>
+                    </strong>
+                </div>
+
+                <div>
+                    <span>Delivery Distance</span>
+                    <strong>
+                        <?= number_format((float)$order['delivery_distance_km'], 2) ?> km
                     </strong>
                 </div>
 
@@ -252,7 +265,7 @@ include('./admin/includes/topbar.php');
                 <div class="item-info">
 
                     <strong>
-                        <?= htmlspecialchars($item['name']) ?>
+                        <?= htmlspecialchars((string)$item['name']) ?>
                     </strong>
 
                     <span>
@@ -276,27 +289,39 @@ include('./admin/includes/topbar.php');
             <span>Subtotal</span>
 
             <strong>
-                ₱<?= number_format($order['subtotal'], 2) ?>
+                ₱<?= number_format((float)$order['subtotal'], 2) ?>
             </strong>
         </div>
 
         <div class="summary-row">
-            <span>Delivery Fee</span>
+            <span>Tax (12%)</span>
 
             <strong>
-                ₱<?= number_format($order['delivery_fee'], 2) ?>
+                ₱<?= number_format((float)$order['tax'], 2) ?>
             </strong>
         </div>
+
+        <?php if (($order['fulfillment'] ?? '') === 'delivery') { ?>
+
+            <div class="summary-row">
+                <span>Delivery Fee</span>
+
+                <strong>
+                    ₱<?= number_format((float)$order['delivery_fee'], 2) ?>
+                </strong>
+            </div>
+
+        <?php } ?>
 
         <div class="confirmation-total">
 
             <span>Total Amount</span>
 
             <h2>
-                ₱<?= number_format($order['total'], 2) ?>
+                ₱<?= number_format((float)$order['total'], 2) ?>
             </h2>
 
-            </div>
+        </div>
 
         <a href="order.php" class="continue-shopping">
             Continue Shopping

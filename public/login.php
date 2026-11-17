@@ -215,7 +215,7 @@ loginForm.addEventListener("submit", async function (event) {
         // Admin redirect
         if (data.role === "admin") {
             window.location.href =
-                data.redirect || "/SoftEcoms/public/admin/index.php";
+                data.redirect || "/SoftEcoms/public/admin/adminDashboard.php";
             return;
         }
 

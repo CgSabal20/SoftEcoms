@@ -8,11 +8,9 @@ include('./admin/includes/header.php');
 include('./admin/includes/topbar.php');
 ?>
 
-<link rel="stylesheet" href="assets/css/cart_page.css">
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+
 
 <style>
-
 .cart-item-card {
     cursor: pointer;
     border: 2px solid transparent;
@@ -53,7 +51,6 @@ include('./admin/includes/topbar.php');
     position: sticky;
     top: 20px;
 }
-
 </style>
 
 <div class="container cart-layout my-5">
@@ -73,15 +70,12 @@ include('./admin/includes/topbar.php');
             <div id="cartItems"></div>
 
             <div id="emptyCart" class="text-center py-5" style="display:none;">
-
                 <h4>Your cart is empty!</h4>
-
                 <p>Looks like you haven't added any pastries yet.</p>
 
                 <a href="order.php" class="btn btn-dark mt-3">
                     Continue Shopping
                 </a>
-
             </div>
 
         </div>
@@ -149,7 +143,6 @@ include('./admin/includes/topbar.php');
 
 </div>
 
-
 <!-- REMOVE PRODUCT MODAL -->
 
 <div class="modal fade remove-modal" id="removeCartModal" tabindex="-1">
@@ -200,11 +193,11 @@ include('./admin/includes/topbar.php');
 
 </div>
 
-
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
+
 
 document.addEventListener("DOMContentLoaded", () => {
 
@@ -216,7 +209,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const cartItems = document.getElementById("cartItems");
     const emptyCart = document.getElementById("emptyCart");
 
-    // ORDER SUMMARY COLUMN
     const orderSummaryColumn = document.getElementById("orderSummaryColumn");
 
     const subtotalElement = document.getElementById("subtotal");
@@ -237,8 +229,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let currentCart = [];
     let selectedCartIDs = new Set();
     let pendingRemoveCartID = null;
-    let hasLoadedCart = false;
-
+    let summaryRequestNumber = 0;
 
     // ==========================================
     // FORMAT PRICE
@@ -249,6 +240,25 @@ document.addEventListener("DOMContentLoaded", () => {
         maximumFractionDigits: 2
     });
 
+    // ==========================================
+    // CHECK PRODUCT STOCK
+    // ==========================================
+
+    function getStockStatus(item) {
+
+        const stock = Number(item.stock);
+        const quantity = Number(item.quantity);
+
+        if (!Number.isFinite(stock) || stock <= 0) {
+            return "out_of_stock";
+        }
+
+        if (stock < quantity) {
+            return "insufficient_stock";
+        }
+
+        return "available";
+    }
 
     // ==========================================
     // API REQUEST
@@ -270,39 +280,30 @@ document.addEventListener("DOMContentLoaded", () => {
         let data;
 
         try {
-
             data = JSON.parse(responseText);
-
         } catch (error) {
-
             console.error("API response:", responseText);
-
-            throw new Error(
-                "Invalid server response. Check your Node.js server."
-            );
-
+            throw new Error("Invalid server response. Check your Node.js server.");
         }
 
         if (response.status === 401) {
-
             window.location.href = "/SoftEcoms/public/login.php";
-
             throw new Error("Please log in first.");
-
         }
 
         if (!response.ok || data.success === false) {
 
-            throw new Error(
-                data.message || "Something went wrong."
-            );
+            const error = new Error(data.message || "Something went wrong.");
 
+            error.status = response.status;
+            error.stockError = data.stockError || false;
+            error.unavailableItems = data.unavailableItems || [];
+
+            throw error;
         }
 
         return data;
-
     }
-
 
     // ==========================================
     // UPDATE HEADER CART BADGE
@@ -312,32 +313,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const badge = document.getElementById("cartCount");
 
-        if (!badge) {
-            return;
-        }
+        if (!badge) return;
 
         try {
 
             const data = await apiRequest("/cart/count");
 
-            const count = Math.max(
-                0,
-                Number(data.cartCount) || 0
-            );
+            const count = Math.max(0, Number(data.cartCount) || 0);
 
             badge.textContent = count;
-
-            badge.style.display =
-                count > 0 ? "flex" : "none";
+            badge.style.display = count > 0 ? "flex" : "none";
 
         } catch (error) {
-
             console.error("Cart badge error:", error);
-
         }
-
     }
-
 
     // ==========================================
     // LOAD CART
@@ -353,24 +343,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const data = await apiRequest("/cart");
 
-            currentCart = Array.isArray(data.cart)
-                ? data.cart
-                : [];
+            currentCart = Array.isArray(data.cart) ? data.cart : [];
 
             const validIDs = new Set(
-                currentCart.map(item => String(item.cartID))
+                currentCart
+                    .filter(item => getStockStatus(item) === "available")
+                    .map(item => String(item.cartID))
             );
 
+            // Remove unavailable items from the checkout selection.
             selectedCartIDs = new Set(
                 [...selectedCartIDs].filter(id => validIDs.has(id))
             );
-
-
-            // Do not automatically select products.
-            // Customers must manually select items for checkout.
-            hasLoadedCart = true;
-
-            hasLoadedCart = true;
 
             displayCart();
 
@@ -384,13 +368,9 @@ document.addEventListener("DOMContentLoaded", () => {
             cartError.style.display = "block";
 
         } finally {
-
             cartLoading.style.display = "none";
-
         }
-
     }
-
 
     // ==========================================
     // DISPLAY CART PRODUCTS
@@ -402,12 +382,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const isCartEmpty = currentCart.length === 0;
 
-        // SHOW EMPTY CART MESSAGE
         emptyCart.style.display = isCartEmpty ? "block" : "none";
-
-        // HIDE ORDER SUMMARY WHEN CART IS EMPTY
         orderSummaryColumn.style.display = isCartEmpty ? "none" : "block";
-
 
         currentCart.forEach(item => {
 
@@ -415,11 +391,14 @@ document.addEventListener("DOMContentLoaded", () => {
             const price = Number(item.price);
             const quantity = Number(item.quantity);
 
+            const stock = Number(item.stock);
+            const stockStatus = getStockStatus(item);
+
+            const isAvailable = stockStatus === "available";
+
             const card = document.createElement("div");
 
-            card.className =
-                "card cart-item-card mb-4 shadow-sm rounded-4";
-
+            card.className = "card cart-item-card mb-4 shadow-sm rounded-4";
             card.dataset.cartId = cartID;
 
             if (selectedCartIDs.has(cartID)) {
@@ -432,7 +411,6 @@ document.addEventListener("DOMContentLoaded", () => {
             const row = document.createElement("div");
             row.className = "row align-items-center";
 
-
             // PRODUCT IMAGE
 
             const imageColumn = document.createElement("div");
@@ -440,10 +418,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const image = document.createElement("img");
 
-            image.src =
-                "assets/product_img/" +
-                encodeURIComponent(item.img || "");
-
+            image.src = "assets/product_img/" + encodeURIComponent(item.img || "");
             image.alt = item.productName || "Product";
             image.className = "img-fluid rounded-4";
             image.style.height = "120px";
@@ -455,7 +430,6 @@ document.addEventListener("DOMContentLoaded", () => {
             };
 
             imageColumn.appendChild(image);
-
 
             // PRODUCT DETAILS
 
@@ -469,23 +443,56 @@ document.addEventListener("DOMContentLoaded", () => {
             priceText.className = "text-muted mb-2";
             priceText.textContent = "₱" + formatPrice(price);
 
+            // STOCK STATUS DISPLAY
+
+            const stockMessage = document.createElement("p");
+            stockMessage.className = "small mb-2";
+
+            if (stockStatus === "out_of_stock") {
+
+                stockMessage.classList.add("text-danger", "fw-bold");
+                stockMessage.textContent = "Out of stock";
+
+            } else if (stockStatus === "insufficient_stock") {
+
+                stockMessage.classList.add("text-warning", "fw-bold");
+                stockMessage.textContent =
+                    `Only ${stock} left in stock. Please reduce your quantity.`;
+
+            } else {
+
+                stockMessage.classList.add("text-success");
+                stockMessage.textContent = `In stock: ${stock}`;
+            }
+
+            // SELECT PRODUCT
+
             const selectLabel = document.createElement("label");
-            selectLabel.className =
-                "d-flex align-items-center gap-2 mt-2";
+            selectLabel.className = "d-flex align-items-center gap-2 mt-2";
 
             const selectCheckbox = document.createElement("input");
 
             selectCheckbox.type = "checkbox";
             selectCheckbox.className = "form-check-input";
-            selectCheckbox.checked = selectedCartIDs.has(cartID);
+            selectCheckbox.checked =
+                isAvailable && selectedCartIDs.has(cartID);
+
+            selectCheckbox.disabled = !isAvailable;
 
             const selectText = document.createElement("span");
-            selectText.textContent = "Select this product";
+
+            selectText.textContent = isAvailable
+                ? "Select this product"
+                : "Unavailable for checkout";
 
             selectLabel.append(selectCheckbox, selectText);
 
-            detailsColumn.append(name, priceText, selectLabel);
-
+            detailsColumn.append(
+                name,
+                priceText,
+                stockMessage,
+                selectLabel
+            );
 
             // QUANTITY
 
@@ -493,8 +500,7 @@ document.addEventListener("DOMContentLoaded", () => {
             quantityColumn.className = "col-md-3 mb-3 mb-md-0";
 
             const quantityForm = document.createElement("form");
-            quantityForm.className =
-                "d-flex align-items-center gap-2 quantity-form";
+            quantityForm.className = "d-flex align-items-center gap-2 quantity-form";
 
             const quantityInput = document.createElement("input");
 
@@ -506,6 +512,11 @@ document.addEventListener("DOMContentLoaded", () => {
             quantityInput.style.width = "75px";
             quantityInput.required = true;
 
+            // Prevent entering a quantity greater than stock.
+            if (Number.isFinite(stock) && stock > 0) {
+                quantityInput.max = String(stock);
+            }
+
             const updateButton = document.createElement("button");
 
             updateButton.type = "submit";
@@ -515,17 +526,14 @@ document.addEventListener("DOMContentLoaded", () => {
             quantityForm.append(quantityInput, updateButton);
             quantityColumn.appendChild(quantityForm);
 
-
-            // SUBTOTAL AND REMOVE
+            // ITEM SUBTOTAL AND REMOVE
 
             const subtotalColumn = document.createElement("div");
             subtotalColumn.className = "col-md-2 text-md-end";
 
             const itemSubtotal = document.createElement("p");
             itemSubtotal.className = "fw-bold product-subtotal";
-
-            itemSubtotal.textContent =
-                "₱" + formatPrice(price * quantity);
+            itemSubtotal.textContent = "₱" + formatPrice(price * quantity);
 
             const removeButton = document.createElement("button");
 
@@ -548,48 +556,42 @@ document.addEventListener("DOMContentLoaded", () => {
             card.appendChild(body);
             cartItems.appendChild(card);
 
-
             // CHECKBOX SELECTION
 
             selectCheckbox.addEventListener("change", () => {
 
-                if (selectCheckbox.checked) {
+                if (!isAvailable) {
+                    selectCheckbox.checked = false;
+                    return;
+                }
 
+                if (selectCheckbox.checked) {
                     selectedCartIDs.add(cartID);
                     card.classList.add("selected");
-
                 } else {
-
                     selectedCartIDs.delete(cartID);
                     card.classList.remove("selected");
-
                 }
 
                 updateSummary();
-
             });
-
 
             // CARD SELECTION
 
             card.addEventListener("click", event => {
 
-                if (
-                    event.target.closest(
-                        "button, a, input, form, select, textarea, label"
-                    )
-                ) {
+                if (event.target.closest(
+                    "button, a, input, form, select, textarea, label"
+                )) {
                     return;
                 }
 
+                if (!isAvailable) return;
+
                 selectCheckbox.checked = !selectCheckbox.checked;
 
-                selectCheckbox.dispatchEvent(
-                    new Event("change")
-                );
-
+                selectCheckbox.dispatchEvent(new Event("change"));
             });
-
 
             // UPDATE QUANTITY
 
@@ -599,10 +601,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 const newQuantity = Number(quantityInput.value);
 
-                if (
-                    !Number.isSafeInteger(newQuantity) ||
-                    newQuantity < 1
-                ) {
+                if (!Number.isSafeInteger(newQuantity) || newQuantity < 1) {
 
                     Swal.fire(
                         "Invalid quantity",
@@ -611,7 +610,17 @@ document.addEventListener("DOMContentLoaded", () => {
                     );
 
                     return;
+                }
 
+                if (newQuantity > stock) {
+
+                    Swal.fire(
+                        "Insufficient stock",
+                        `Only ${stock} item(s) are currently available.`,
+                        "warning"
+                    );
+
+                    return;
                 }
 
                 updateButton.disabled = true;
@@ -631,7 +640,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     });
 
                     await loadCart();
-
                     await updateCartBadge();
 
                     Swal.fire({
@@ -651,11 +659,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     updateButton.disabled = false;
                     updateButton.textContent = "Update";
-
                 }
-
             });
-
 
             // REMOVE PRODUCT
 
@@ -667,67 +672,105 @@ document.addEventListener("DOMContentLoaded", () => {
                     item.productName || "this product";
 
                 removeModal.show();
-
             });
 
         });
 
         updateSummary();
-
     }
 
-
     // ==========================================
-    // UPDATE SUMMARY
+    // UPDATE ORDER SUMMARY
     // ==========================================
 
-    function updateSummary() {
+    async function updateSummary() {
 
-        let subtotalCents = 0;
-        let totalItems = 0;
+        const requestNumber = ++summaryRequestNumber;
 
-        currentCart.forEach(item => {
+        const selectedIDs = [...selectedCartIDs];
 
-            if (!selectedCartIDs.has(String(item.cartID))) {
+        const selectedItems = currentCart
+            .filter(item =>
+                selectedCartIDs.has(String(item.cartID))
+            )
+            .reduce((sum, item) => sum + Number(item.quantity), 0);
+
+        selectedCountElement.textContent = selectedItems;
+
+        if (selectedIDs.length === 0) {
+
+            subtotalElement.textContent = formatPrice(0);
+            taxElement.textContent = formatPrice(0);
+            grandTotalElement.textContent = formatPrice(0);
+
+            proceedCheckoutButton.disabled = true;
+            proceedCheckoutButton.setAttribute("aria-disabled", "true");
+
+            return;
+        }
+
+        proceedCheckoutButton.disabled = true;
+        proceedCheckoutButton.setAttribute("aria-disabled", "true");
+
+        try {
+
+            const data = await apiRequest("/cart/summary", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    cartIDs: selectedIDs
+                })
+            });
+
+            if (requestNumber !== summaryRequestNumber) {
                 return;
             }
 
-            const priceCents = Math.round(
-                Number(item.price) * 100
+            subtotalElement.textContent = formatPrice(data.subtotal);
+            taxElement.textContent = formatPrice(data.tax);
+            grandTotalElement.textContent = formatPrice(data.total);
+
+            proceedCheckoutButton.disabled = false;
+            proceedCheckoutButton.setAttribute("aria-disabled", "false");
+
+        } catch (error) {
+
+            if (requestNumber !== summaryRequestNumber) {
+                return;
+            }
+
+            console.error("Order summary error:", error);
+
+            subtotalElement.textContent = formatPrice(0);
+            taxElement.textContent = formatPrice(0);
+            grandTotalElement.textContent = formatPrice(0);
+
+            proceedCheckoutButton.disabled = true;
+            proceedCheckoutButton.setAttribute("aria-disabled", "true");
+
+            if (error.stockError || error.status === 409) {
+
+                Swal.fire(
+                    "Stock unavailable",
+                    error.message,
+                    "warning"
+                );
+
+                // Reload to get the latest stock information.
+                await loadCart();
+
+                return;
+            }
+
+            Swal.fire(
+                "Unable to calculate order summary",
+                error.message,
+                "error"
             );
-
-            const quantity = Number(item.quantity);
-
-            subtotalCents += priceCents * quantity;
-            totalItems += quantity;
-
-        });
-
-        const taxCents = Math.round(subtotalCents * 0.12);
-        const grandTotalCents = subtotalCents + taxCents;
-
-        subtotalElement.textContent =
-            formatPrice(subtotalCents / 100);
-
-        taxElement.textContent =
-            formatPrice(taxCents / 100);
-
-        grandTotalElement.textContent =
-            formatPrice(grandTotalCents / 100);
-
-        // Selected Items counts selected quantities.
-        selectedCountElement.textContent = totalItems;
-
-        proceedCheckoutButton.disabled =
-            selectedCartIDs.size === 0;
-
-        proceedCheckoutButton.setAttribute(
-            "aria-disabled",
-            selectedCartIDs.size === 0 ? "true" : "false"
-        );
-
+        }
     }
-
 
     // ==========================================
     // CONFIRM REMOVE
@@ -754,20 +797,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 })
             });
 
-            selectedCartIDs.delete(
-                String(pendingRemoveCartID)
-            );
+            selectedCartIDs.delete(String(pendingRemoveCartID));
 
             removeModal.hide();
-
             pendingRemoveCartID = null;
 
             await loadCart();
-
-            // Refresh badge after removing product.
             await updateCartBadge();
-
-            // No success notification here.
 
         } catch (error) {
 
@@ -781,25 +817,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
             confirmRemoveButton.disabled = false;
             confirmRemoveButton.textContent = "Remove";
-
         }
-
     });
 
-
-    removeModalElement.addEventListener(
-        "hidden.bs.modal",
-        () => {
-            pendingRemoveCartID = null;
-        }
-    );
-
+    removeModalElement.addEventListener("hidden.bs.modal", () => {
+        pendingRemoveCartID = null;
+    });
 
     // ==========================================
     // PROCEED TO CHECKOUT
     // ==========================================
 
-    proceedCheckoutForm.addEventListener("submit", event => {
+    proceedCheckoutForm.addEventListener("submit", async event => {
 
         event.preventDefault();
 
@@ -812,48 +841,70 @@ document.addEventListener("DOMContentLoaded", () => {
             );
 
             return;
-
         }
 
-        selectedCartInputs.innerHTML = "";
-
-        [...selectedCartIDs].forEach(id => {
-
-            const input = document.createElement("input");
-
-            input.type = "hidden";
-            input.name = "selected_cart_ids[]";
-            input.value = id;
-
-            selectedCartInputs.appendChild(input);
-
-        });
-
+        // Recheck stock immediately before opening checkout.
         proceedCheckoutButton.disabled = true;
+        proceedCheckoutButton.textContent = "Checking stock...";
 
-        proceedCheckoutButton.textContent =
-            "Opening Checkout...";
+        try {
 
-        proceedCheckoutForm.submit();
+            const selectedIDs = [...selectedCartIDs];
 
+            await apiRequest("/cart/summary", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    cartIDs: selectedIDs
+                })
+            });
+
+            selectedCartInputs.innerHTML = "";
+
+            selectedIDs.forEach(id => {
+
+                const input = document.createElement("input");
+
+                input.type = "hidden";
+                input.name = "selected_cart_ids[]";
+                input.value = id;
+
+                selectedCartInputs.appendChild(input);
+            });
+
+            proceedCheckoutButton.textContent = "Opening Checkout...";
+
+            proceedCheckoutForm.submit();
+
+        } catch (error) {
+
+            proceedCheckoutButton.disabled = true;
+            proceedCheckoutButton.textContent = "PROCEED TO CHECKOUT";
+
+            Swal.fire(
+                "Unable to proceed",
+                error.message,
+                error.stockError ? "warning" : "error"
+            );
+
+            await loadCart();
+        }
     });
-
 
     // ==========================================
     // INITIAL LOAD
     // ==========================================
 
     async function initializeCart() {
-
         await loadCart();
-
-        // Get the badge count after the cart has loaded.
         await updateCartBadge();
-
     }
 
     initializeCart();
 
 });
+
 
 </script>
