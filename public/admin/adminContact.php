@@ -7,44 +7,8 @@ include_once __DIR__ . "/includes/header.php";
 ?>
 
 <style>
-/* =================================
-   CONTACT PAGE LAYOUT
-================================= */
-
-.contact-layout {
-    display: flex;
-    width: 100%;
-    min-height: 100vh;
-    align-items: stretch;
-}
-
-.contact-layout .admin-sidebar-wrapper {
-    flex-shrink: 0;
-}
-
-.contact-layout .main-content {
-    flex: 1;
-    min-width: 0;
-    padding: 0;
-    overflow-x: hidden;
-}
-
-.contact-layout .container-fluid {
-    width: 100%;
-}
-
-/* Contact statistics */
-.contact-stat-card {
-    border: none;
-    border-radius: 12px;
-    transition: transform 0.2s ease;
-}
-
-.contact-stat-card:hover {
-    transform: translateY(-3px);
-}
-
-/* Contact table */
+/* Contact page details; shared seller-centre layout comes from adminTheme.css. */
+.contact-stat-card { min-height: 105px; }
 .contact-table th {
     white-space: nowrap;
 }
@@ -58,23 +22,9 @@ include_once __DIR__ . "/includes/header.php";
     overflow-wrap: anywhere;
 }
 
-/* Responsive layout */
-@media (max-width: 768px) {
-    .contact-layout {
-        flex-direction: column;
-    }
-
-    .contact-layout .admin-sidebar-wrapper {
-        width: 100%;
-    }
-
-    .contact-layout .main-content {
-        width: 100%;
-    }
-}
 </style>
 
-<div class="contact-layout">
+<div class="dashboard-layout contact-layout">
 
     <?php include_once __DIR__ . "/includes/sidebar.php"; ?>
 
@@ -85,15 +35,16 @@ include_once __DIR__ . "/includes/header.php";
             <!-- PAGE HEADER -->
             <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
 
-                <div>
-                    <h2 class="fw-bold mb-1">Contact Messages</h2>
+                <div class="admin-page-heading">
+                    <span class="admin-eyebrow">CUSTOMER SUPPORT</span>
+                    <h2 class="fw-bold mb-1">Contact messages</h2>
                     <p class="text-muted mb-0">
                         View and manage customer inquiries.
                     </p>
                 </div>
 
                 <button type="button" class="btn btn-outline-primary" id="refreshBtn">
-                    <i class="bi bi-arrow-clockwise"></i> Refresh
+                    <i class="fa-solid fa-arrows-rotate me-1"></i> Refresh messages
                 </button>
 
             </div>
@@ -106,7 +57,8 @@ include_once __DIR__ . "/includes/header.php";
                 <div class="col-6 col-xl-3">
                     <div class="card contact-stat-card shadow-sm h-100">
                         <div class="card-body">
-                            <p class="text-muted mb-1">Total Messages</p>
+                            <div class="admin-stat-icon"><i class="fa-regular fa-envelope"></i></div>
+                            <p class="text-muted mb-1">Total messages</p>
                             <h3 class="fw-bold mb-0" id="totalCount">0</h3>
                         </div>
                     </div>
@@ -115,6 +67,7 @@ include_once __DIR__ . "/includes/header.php";
                 <div class="col-6 col-xl-3">
                     <div class="card contact-stat-card shadow-sm h-100">
                         <div class="card-body">
+                            <div class="admin-stat-icon is-warning"><i class="fa-regular fa-bell"></i></div>
                             <p class="text-muted mb-1">Unread</p>
                             <h3 class="fw-bold mb-0 text-warning" id="unreadCount">0</h3>
                         </div>
@@ -124,6 +77,7 @@ include_once __DIR__ . "/includes/header.php";
                 <div class="col-6 col-xl-3">
                     <div class="card contact-stat-card shadow-sm h-100">
                         <div class="card-body">
+                            <div class="admin-stat-icon is-info"><i class="fa-regular fa-envelope-open"></i></div>
                             <p class="text-muted mb-1">Read</p>
                             <h3 class="fw-bold mb-0 text-primary" id="readCount">0</h3>
                         </div>
@@ -133,7 +87,8 @@ include_once __DIR__ . "/includes/header.php";
                 <div class="col-6 col-xl-3">
                     <div class="card contact-stat-card shadow-sm h-100">
                         <div class="card-body">
-                            <p class="text-muted mb-1">Replied / Handled</p>
+                            <div class="admin-stat-icon is-success"><i class="fa-solid fa-reply"></i></div>
+                            <p class="text-muted mb-1">Replied / handled</p>
                             <h3 class="fw-bold mb-0 text-success" id="repliedCount">0</h3>
                         </div>
                     </div>
@@ -263,6 +218,12 @@ include_once __DIR__ . "/includes/header.php";
                 </div>
 
                 <div class="mt-3">
+                    <label for="replyMessage" class="form-label fw-semibold">Reply to customer</label>
+                    <textarea id="replyMessage" class="form-control" rows="5" maxlength="5000" placeholder="Write your response..."></textarea>
+                    <div class="form-text">This reply will be emailed to the customer.</div>
+                </div>
+
+                <div class="mt-3">
 
                     <label for="detailStatus" class="form-label fw-semibold">
                         Message Status
@@ -290,6 +251,13 @@ include_once __DIR__ . "/includes/header.php";
                 <button
                     type="button"
                     class="btn btn-primary"
+                    id="sendReplyBtn">
+                    <i class="fa-solid fa-paper-plane me-1"></i> Send reply
+                </button>
+
+                <button
+                    type="button"
+                    class="btn btn-outline-primary"
                     id="saveStatusBtn">
                     Save Status
                 </button>
@@ -306,7 +274,7 @@ include_once __DIR__ . "/includes/header.php";
 (() => {
     "use strict";
 
-    const API_URL = "http://localhost:3000";
+    const API_URL = "/api";
 
     const tableBody = document.getElementById("messagesTable");
     const searchInput = document.getElementById("searchInput");
@@ -601,6 +569,8 @@ include_once __DIR__ . "/includes/header.php";
             document.getElementById("detailStatus").value =
                 item.status || "unread";
 
+            document.getElementById("replyMessage").value = "";
+
             if (messageModal) {
 
                 messageModal.show();
@@ -671,6 +641,38 @@ include_once __DIR__ . "/includes/header.php";
         }
     }
 
+    async function sendReply() {
+        if (!selectedMessageId) return;
+        const button = document.getElementById("sendReplyBtn");
+        const reply = document.getElementById("replyMessage").value.trim();
+        if (!reply) {
+            showMessage("Write a reply before sending.", "warning");
+            return;
+        }
+        button.disabled = true;
+        button.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Sending...';
+        try {
+            const data = await apiRequest(`/contact/messages/${selectedMessageId}/reply`, {
+                method: "POST",
+                body: JSON.stringify({ reply })
+            });
+            if (messageModal) messageModal.hide();
+            else {
+                modalElement.style.display = "none";
+                modalElement.classList.remove("show");
+                modalElement.setAttribute("aria-hidden", "true");
+            }
+            showMessage(data.message || "Reply sent successfully.");
+            await loadMessages();
+        } catch (error) {
+            console.error("Send customer reply error:", error);
+            showMessage(error.message, "danger");
+        } finally {
+            button.disabled = false;
+            button.innerHTML = '<i class="fa-solid fa-paper-plane me-1"></i> Send reply';
+        }
+    }
+
     // EVENT LISTENERS
     tableBody.addEventListener("click", event => {
 
@@ -691,12 +693,15 @@ include_once __DIR__ . "/includes/header.php";
     document.getElementById("saveStatusBtn")
         .addEventListener("click", saveMessageStatus);
 
+    document.getElementById("sendReplyBtn")
+        .addEventListener("click", sendReply);
+
     // INITIAL LOAD
     loadMessages();
 
 })();
 </script>
 
-<?php
-include_once __DIR__ . "/includes/footer.php";
-?>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -3,6 +3,20 @@ class AdminOrderController {
     this.db = db;
   }
 
+  async logAdminActivity(req, actionType, description) {
+    try {
+      const adminId = Number(
+        req.session?.user_id || req.session?.authUser?.user_id || req.session?.authUser?.id,
+      );
+      await this.db.execute(
+        "INSERT INTO admin_changelog (admin_id, action_type, description) VALUES (?, ?, ?)",
+        [adminId || null, actionType, description],
+      );
+    } catch (error) {
+      console.error("Order activity log error:", error);
+    }
+  }
+
   // ==========================================
   // GET CANCELLATION REQUESTS
   // ==========================================
@@ -123,7 +137,7 @@ class AdminOrderController {
 
       // Lock associated order.
       const [orderRows] = await connection.execute(
-        `SELECT id, status
+        `SELECT id, COnumber, status
          FROM orders
          WHERE id = ?
          LIMIT 1
@@ -262,6 +276,12 @@ class AdminOrderController {
 
       await connection.commit();
 
+      await this.logAdminActivity(
+        req,
+        "ORDER_CANCELLATION",
+        `${action === "approve" ? "Approved" : "Rejected"} cancellation request for order ${order.COnumber || order.id} (request ID ${requestId}).`,
+      );
+
       return res.status(200).json({
         success: true,
         message:
@@ -388,6 +408,12 @@ class AdminOrderController {
       );
 
       await connection.commit();
+
+      await this.logAdminActivity(
+        req,
+        "ORDER_UPDATE",
+        `Updated order ID ${orderId} from ${currentStatus.replace(/_/g, " ")} to ${newStatus.replace(/_/g, " ")}.`,
+      );
 
       return res.status(200).json({
         success: true,

@@ -1,4 +1,5 @@
 const Contact = require("../models/Contact");
+const { sendContactReply } = require("../config/contactEmail");
 
 class ContactController {
   constructor(db) {
@@ -206,6 +207,43 @@ class ContactController {
       return res.status(500).json({
         success: false,
         message: "Unable to update contact message status.",
+      });
+    }
+  };
+
+  // Admin replies to a customer by email and marks the inquiry as replied.
+  replyToMessage = async (req, res) => {
+    try {
+      const role = req.session?.userRole || req.session?.authUser?.role;
+      if (!req.session?.authUser || String(role).toLowerCase() !== "admin") {
+        return res.status(403).json({ success: false, message: "Admin access required." });
+      }
+
+      const id = Number(req.params.id);
+      const reply = String(req.body?.reply || "").trim();
+      if (!Number.isSafeInteger(id) || id < 1) {
+        return res.status(400).json({ success: false, message: "Invalid message ID." });
+      }
+      if (!reply || reply.length > 5000) {
+        return res.status(400).json({ success: false, message: "Enter a reply of 1 to 5,000 characters." });
+      }
+
+      const contact = await this.contactModel.getMessageById(id);
+      if (!contact) {
+        return res.status(404).json({ success: false, message: "Contact message not found." });
+      }
+
+      await sendContactReply(contact, reply);
+      await this.contactModel.updateStatus(id, "replied");
+      return res.status(200).json({ success: true, message: `Reply sent to ${contact.email}.` });
+    } catch (error) {
+      console.error("Send contact reply error:", error);
+      const notConfigured = error.message === "Email service is not configured.";
+      return res.status(notConfigured ? 503 : 500).json({
+        success: false,
+        message: notConfigured
+          ? "Email is not configured on the server. Add SMTP settings before replying."
+          : "Unable to send the reply. Check the email settings and try again.",
       });
     }
   };

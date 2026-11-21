@@ -53,10 +53,7 @@ if ($sidebar_total_orders_result) {
         <!-- HEADER -->
         <div class="panel-header">
 
-            <h2>
-                <span>📊</span>
-                Admin Panel
-            </h2>
+            <a class="admin-brand" href="adminDashboard.php"><span class="admin-brand-mark">S</span><span><strong>Sweetclaire</strong><small>Seller Centre</small></span></a>
 
             <p>Management Dashboard</p>
 
@@ -66,33 +63,33 @@ if ($sidebar_total_orders_result) {
         <!-- NAVIGATION -->
         <nav class="nav-menu">
 
-            <a href="adminDashboard.php" class="nav-item">
-                <span class="nav-icon">📈</span>
+            <a href="adminDashboard.php" class="nav-item <?= basename($_SERVER['SCRIPT_NAME'] ?? '') === 'adminDashboard.php' ? 'active' : '' ?>">
+                <span class="nav-icon"><i class="fa-solid fa-chart-line"></i></span>
                 <span>Dashboard</span>
             </a>
 
-            <a href="adminOrders.php" class="nav-item">
-                <span class="nav-icon">📦</span>
+            <a href="adminOrders.php" class="nav-item <?= basename($_SERVER['SCRIPT_NAME'] ?? '') === 'adminOrders.php' ? 'active' : '' ?>">
+                <span class="nav-icon"><i class="fa-solid fa-box"></i></span>
                 <span>Orders</span>
             </a>
 
-            <a href="adminProduct.php" class="nav-item">
-                <span class="nav-icon">🏷️</span>
+            <a href="adminProduct.php" class="nav-item <?= basename($_SERVER['SCRIPT_NAME'] ?? '') === 'adminProduct.php' ? 'active' : '' ?>">
+                <span class="nav-icon"><i class="fa-solid fa-tag"></i></span>
                 <span>Products</span>
             </a>
 
-            <a href="adminCustomer.php" class="nav-item">
-                <span class="nav-icon">👥</span>
+            <a href="adminCustomer.php" class="nav-item <?= in_array(basename($_SERVER['SCRIPT_NAME'] ?? ''), ['adminCustomer.php','adminUserprofile.php'], true) ? 'active' : '' ?>">
+                <span class="nav-icon"><i class="fa-solid fa-users"></i></span>
                 <span>Customers</span>
             </a>
 
-            <a href="adminOrders.php" class="nav-item">
-                <span class="nav-icon">📝</span>
+            <a href="adminChangelog.php" class="nav-item <?= basename($_SERVER['SCRIPT_NAME'] ?? '') === 'adminChangelog.php' ? 'active' : '' ?>">
+                <span class="nav-icon"><i class="fa-solid fa-clock-rotate-left"></i></span>
                 <span>ChangeLog</span>
             </a>
 
-            <a href="adminContact.php" class="nav-item">
-                <span class="nav-icon">✉️</span>
+            <a href="adminContact.php" class="nav-item <?= basename($_SERVER['SCRIPT_NAME'] ?? '') === 'adminContact.php' ? 'active' : '' ?>">
+                <span class="nav-icon"><i class="fa-solid fa-envelope"></i></span>
                 <span>Contact Messages</span>
             </a>
 
@@ -149,7 +146,7 @@ document.getElementById("logoutForm").addEventListener("submit", async function 
     e.preventDefault();
 
     try {
-        const response = await fetch("http://localhost:3000/logout", {
+        const response = await fetch("/api/logout", {
             method: "POST",
             credentials: "include"
         });

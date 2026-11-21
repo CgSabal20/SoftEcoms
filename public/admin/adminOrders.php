@@ -75,6 +75,19 @@ $total_orders = (int)($total_row['total'] ?? 0);
 
 $total_pages = max(1, (int)ceil($total_orders / $limit));
 
+$pipeline_query = "
+    SELECT
+        SUM(status = 'pending') AS pending,
+        SUM(status = 'processing') AS processing,
+        SUM(status = 'ready_for_delivery') AS ready_for_delivery,
+        SUM(status = 'out_for_delivery') AS out_for_delivery,
+        SUM(status = 'completed') AS completed,
+        SUM(status = 'cancelled') AS cancelled
+    FROM orders
+";
+$pipeline_result = mysqli_query($conn, $pipeline_query);
+$pipeline = $pipeline_result ? mysqli_fetch_assoc($pipeline_result) : [];
+
 
 // ==========================================
 // GET ORDERS
@@ -106,8 +119,6 @@ if (!$order_result) {
 
 ?>
 
-<body class="orders-page">
-
 <div class="dashboard-layout">
 
     <!-- SIDEBAR -->
@@ -123,7 +134,8 @@ if (!$order_result) {
             <div class="orders-header mb-4">
 
                 <div>
-                    <h2>📦 Orders Management</h2>
+                    <span class="admin-eyebrow">FULFILLMENT</span>
+                    <h2>Orders</h2>
 
                     <p>
                         Manage customer orders and update their delivery status.
@@ -131,13 +143,30 @@ if (!$order_result) {
                 </div>
 
                 <!-- SEARCH -->
-                <input
+                <label class="orders-search"><i class="fa-solid fa-magnifying-glass"></i><input
                     type="text"
                     id="searchInput"
                     class="form-control search-input"
-                    placeholder="Search order..."
-                >
+                    placeholder="Search orders or customers..."
+                    aria-label="Search orders or customers"
+                ></label>
 
+            </div>
+
+            <div class="orders-pipeline" aria-label="Order fulfillment stages">
+                <?php foreach ([
+                    'pending' => ['New orders', 'fa-inbox'],
+                    'processing' => ['Preparing', 'fa-kitchen-set'],
+                    'ready_for_delivery' => ['Ready', 'fa-box'],
+                    'out_for_delivery' => ['On the way', 'fa-truck'],
+                    'completed' => ['Delivered', 'fa-circle-check'],
+                ] as $stage => [$label, $icon]): ?>
+                    <div class="pipeline-step <?= (int)($pipeline[$stage] ?? 0) > 0 ? 'has-orders' : '' ?>">
+                        <span class="pipeline-icon"><i class="fa-solid <?= $icon ?>"></i></span>
+                        <span class="pipeline-label"><?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?></span>
+                        <strong><?= number_format((int)($pipeline[$stage] ?? 0)) ?></strong>
+                    </div>
+                <?php endforeach; ?>
             </div>
 
 
@@ -145,12 +174,13 @@ if (!$order_result) {
                  CANCELLATION REQUESTS
             ========================================== -->
 
-            <div class="card shadow-sm border-0 mb-4">
+            <div class="card orders-cancellations-card shadow-sm border-0 mb-4">
 
                 <div class="card-header bg-white d-flex justify-content-between align-items-center">
 
                     <div>
-                        <h5 class="mb-1">Cancellation Requests</h5>
+                        <span class="admin-eyebrow">CUSTOMER REQUESTS</span>
+                        <h5 class="mb-1">Cancellation requests</h5>
 
                         <small class="text-muted">
                             Review customer requests to cancel their orders.
@@ -162,7 +192,7 @@ if (!$order_result) {
                         class="btn btn-outline-primary btn-sm"
                         id="refreshCancellationRequests"
                     >
-                        Refresh
+                        <i class="fa-solid fa-arrows-rotate me-1"></i> Refresh
                     </button>
 
                 </div>
@@ -214,6 +244,16 @@ if (!$order_result) {
                  ORDERS CARD
             ========================================== -->
 
+            <div class="orders-toolbar-row">
+                <div><h3>All orders</h3><p><?= number_format($total_orders) ?> orders · Update each order as it moves through fulfillment.</p></div>
+                <div class="order-filter-chips" role="group" aria-label="Filter orders by status">
+                    <button type="button" class="order-filter active" data-filter="all">All <span><?= number_format($total_orders) ?></span></button>
+                    <?php foreach (['pending' => 'New', 'processing' => 'Preparing', 'ready_for_delivery' => 'Ready', 'out_for_delivery' => 'On the way', 'completed' => 'Delivered', 'cancelled' => 'Cancelled'] as $filterStatus => $filterLabel): ?>
+                        <button type="button" class="order-filter" data-filter="<?= htmlspecialchars($filterStatus, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($filterLabel, ENT_QUOTES, 'UTF-8') ?> <span><?= number_format((int)($pipeline[$filterStatus] ?? 0)) ?></span></button>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+
             <div class="card orders-card shadow-sm border-0">
 
                 <div class="card-body">
@@ -260,7 +300,7 @@ if (!$order_result) {
 
                                     ?>
 
-                                    <tr>
+                                    <tr data-order-status="<?= htmlspecialchars($status, ENT_QUOTES, 'UTF-8') ?>">
 
                                         <!-- ORDER NUMBER -->
                                         <td>
@@ -462,24 +502,35 @@ if (!$order_result) {
 // ==========================================
 
 const searchInput = document.getElementById("searchInput");
+const orderFilters = document.querySelectorAll(".order-filter");
+let activeOrderFilter = "all";
 
-searchInput.addEventListener("keyup", function () {
+function filterOrders() {
 
-    const value = this.value.toLowerCase();
+    const value = searchInput.value.trim().toLowerCase();
 
     const rows = document.querySelectorAll("#ordersTable tr");
 
     rows.forEach(row => {
 
-        row.style.display = row.innerText
-            .toLowerCase()
-            .includes(value)
-            ? ""
-            : "none";
+        const matchesSearch = row.innerText.toLowerCase().includes(value);
+        const matchesStatus = activeOrderFilter === "all" || row.dataset.orderStatus === activeOrderFilter;
+        row.style.display = matchesSearch && matchesStatus ? "" : "none";
 
     });
 
-});
+}
+
+searchInput.addEventListener("input", filterOrders);
+orderFilters.forEach(button => button.addEventListener("click", () => {
+    activeOrderFilter = button.dataset.filter;
+    orderFilters.forEach(item => {
+        const active = item === button;
+        item.classList.toggle("active", active);
+        item.setAttribute("aria-pressed", String(active));
+    });
+    filterOrders();
+}));
 
 
 // ==========================================
@@ -516,7 +567,7 @@ async function updateOrderStatus(select) {
     try {
 
         const response = await fetch(
-            "http://localhost:3000/admin/orders/update-status",
+            "/api/admin/orders/update-status",
             {
                 method: "POST",
 
@@ -612,7 +663,7 @@ async function loadCancellationRequests() {
     try {
 
         const response = await fetch(
-            "http://localhost:3000/admin/orders/cancellation-requests",
+            "/api/admin/orders/cancellation-requests",
             {
                 method: "GET",
                 credentials: "include"
@@ -779,7 +830,7 @@ async function reviewCancellationRequest(requestId, action) {
     try {
 
         const response = await fetch(
-            `http://localhost:3000/admin/orders/cancellation-requests/${requestId}/review`,
+            `/api/admin/orders/cancellation-requests/${requestId}/review`,
             {
                 method: "POST",
 

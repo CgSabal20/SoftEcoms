@@ -1,7 +1,9 @@
 const bcrypt = require("bcrypt");
 const crypto = require("crypto");
-const fs = require("fs");
 const path = require("path");
+
+const DEFAULT_PROFILE_IMAGE = "default-avatar.svg";
+const { resolveImageUrl, storePublicImage, removePublicImage } = require("../config/mediaStorage");
 
 const User = require("../models/User");
 const {
@@ -294,7 +296,8 @@ class Authentication {
           middleName: user.middleName || null,
           username: user.username,
           email: user.emailAddress || user.email || null,
-          profile: user.profile || null,
+          profile: user.profile || DEFAULT_PROFILE_IMAGE,
+          profileImageUrl: resolveImageUrl(user.profile, "/SoftEcoms/public/assets/profile_img/"),
           profileComplete,
         };
 
@@ -496,7 +499,7 @@ class Authentication {
           <h1 style="color:#8b4513">Email verified successfully!</h1>
           <p>Your Sweet! account is now active.</p>
           <p>You can now log in to your account.</p>
-          <a href="http://localhost/SoftEcoms/public/login.php"
+          <a href="${(process.env.APP_URL || "http://localhost").replace(/\/+$/, "")}/SoftEcoms/public/login.php"
              style="display:inline-block;background:#8b4513;color:white;padding:12px 22px;text-decoration:none;border-radius:6px">
             Go to Login
           </a>
@@ -585,7 +588,8 @@ class Authentication {
         city: user.city,
         role: user.role,
         accountStatus: user.accountStatus,
-        profile: user.profile || null,
+        profile: user.profile || DEFAULT_PROFILE_IMAGE,
+        profileImageUrl: resolveImageUrl(user.profile, "/SoftEcoms/public/assets/profile_img/"),
         profileComplete,
       };
 
@@ -728,7 +732,7 @@ class Authentication {
   };
 
   updateProfile = async (req, res) => {
-    let savedImagePath = null;
+    let savedImageReference = null;
 
     try {
       if (!req.session || !req.session.authUser) {
@@ -825,7 +829,7 @@ class Authentication {
         });
       }
 
-      let profile = currentRows[0].profile || null;
+      let profile = currentRows[0].profile || DEFAULT_PROFILE_IMAGE;
       const profileImage = req.body?.profileImage;
 
       if (profileImage) {
@@ -845,10 +849,10 @@ class Authentication {
         const extension = match[1] === "jpeg" ? "jpg" : match[1];
         const imageBuffer = Buffer.from(match[2], "base64");
 
-        if (!imageBuffer.length || imageBuffer.length > 5 * 1024 * 1024) {
+        if (!imageBuffer.length || imageBuffer.length > 3 * 1024 * 1024) {
           return res.status(400).json({
             success: false,
-            message: "The profile photo must be 5 MB or smaller.",
+            message: "The profile photo must be 3 MB or smaller.",
           });
         }
 
@@ -878,22 +882,18 @@ class Authentication {
           });
         }
 
-        const uploadDirectory = path.join(
-          __dirname,
-          "../../public/assets/profile_img",
-        );
-
-        await fs.promises.mkdir(uploadDirectory, { recursive: true });
-
         const filename = `profile_${userId}_${crypto
           .randomBytes(8)
           .toString("hex")}.${extension}`;
-
-        savedImagePath = path.join(uploadDirectory, filename);
-
-        await fs.promises.writeFile(savedImagePath, imageBuffer);
-
-        profile = filename;
+        const uploadDirectory = path.join(__dirname, "../../public/assets/profile_img");
+        const storedImage = await storePublicImage({
+          buffer: imageBuffer,
+          filename,
+          folder: "profiles",
+          localDirectory: uploadDirectory,
+        });
+        profile = storedImage.reference;
+        savedImageReference = storedImage.reference;
       }
 
       await this.db.execute(
@@ -924,20 +924,8 @@ class Authentication {
       // Remove the old image only after the database update succeeds.
       const oldProfile = currentRows[0].profile;
 
-      if (
-        savedImagePath &&
-        oldProfile &&
-        path.basename(oldProfile) === oldProfile
-      ) {
-        const oldPath = path.join(
-          __dirname,
-          "../../public/assets/profile_img",
-          oldProfile,
-        );
-
-        if (oldPath !== savedImagePath) {
-          await fs.promises.unlink(oldPath).catch(() => {});
-        }
+      if (savedImageReference && oldProfile && oldProfile !== profile) {
+        await removePublicImage(oldProfile, path.join(__dirname, "../../public/assets/profile_img"));
       }
 
       const profileComplete = Boolean(
@@ -956,6 +944,7 @@ class Authentication {
         barangay,
         city,
         profile,
+        profileImageUrl: resolveImageUrl(profile, "/SoftEcoms/public/assets/profile_img/"),
         profileComplete,
       };
 
@@ -982,15 +971,13 @@ class Authentication {
             barangay,
             city,
             profile,
-            profileImageUrl: profile
-              ? `/SoftEcoms/public/assets/profile_img/${encodeURIComponent(profile)}`
-              : null,
+            profileImageUrl: resolveImageUrl(profile, "/SoftEcoms/public/assets/profile_img/"),
           },
         });
       });
     } catch (error) {
-      if (savedImagePath) {
-        await fs.promises.unlink(savedImagePath).catch(() => {});
+      if (savedImageReference) {
+        await removePublicImage(savedImageReference, path.join(__dirname, "../../public/assets/profile_img"));
       }
 
       console.error("Update profile error:", error);

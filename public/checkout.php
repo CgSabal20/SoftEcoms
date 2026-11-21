@@ -67,10 +67,10 @@ if (empty($selectedIDs) || !is_array($selectedIDs)) {
 }
 
 include('./admin/includes/header.php');
-include('./admin/includes/topbar.php');
+include('./includes/topbar.php');
 ?>
 
-<link rel="stylesheet" href="assets/css/checkout.css?v=3">
+<link rel="stylesheet" href="assets/css/checkout.css?v=4">
 
 <link
     rel="stylesheet"
@@ -375,9 +375,8 @@ include('./admin/includes/topbar.php');
                                 </label>
 
                                 <p class="map-description">
-                                    Select your exact delivery location.
-                                    Click anywhere on the map or drag the pin
-                                    to adjust your location.
+                                    Enter a full address or a short place name, like “Hamersons Hotel,” and we’ll find it in CDO.
+                                    You can also click the map or drag the pin to adjust the location.
                                 </p>
 
                                 <div id="deliveryMap"></div>
@@ -541,9 +540,7 @@ include('./admin/includes/topbar.php');
 
                 </div>
 
-                <!-- ==================================
-                     RIGHT SIDE: ORDER SUMMARY
-                =================================== -->
+                <!-- CART TOTALS -->
 
                 <aside class="checkout-sidebar">
 
@@ -553,11 +550,9 @@ include('./admin/includes/topbar.php');
 
                             <div>
 
-                                <span class="checkout-eyebrow">
-                                    YOUR SELECTED ITEMS
-                                </span>
+                                <span class="checkout-eyebrow">CART &amp; PRICING</span>
 
-                                <h3>Order Summary</h3>
+                                <h3>Your Cart</h3>
 
                             </div>
 
@@ -604,7 +599,7 @@ include('./admin/includes/topbar.php');
                             id="placeOrderButton"
                             class="place-order-btn"
                         >
-                            PLACE ORDER <span>→</span>
+                            ORDER SUMMARY <span>→</span>
                         </button>
 
                         <p class="summary-note">
@@ -634,30 +629,68 @@ include('./admin/includes/topbar.php');
     aria-hidden="true"
 >
 
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
 
         <div class="modal-content">
 
-            <div class="modal-body text-center">
+            <div class="modal-body review-modal-body">
 
-                <div class="remove-icon">
-                    <i class="fas fa-shopping-bag"></i>
+                <div class="review-modal-heading">
+                    <div class="remove-icon"><i class="fas fa-clipboard-check"></i></div>
+                    <div>
+                        <span class="checkout-eyebrow">FINAL CHECK</span>
+                        <h4 class="remove-title">Review your order</h4>
+                        <p class="remove-message">Confirm the details below before placing your order.</p>
+                    </div>
                 </div>
 
-                <div class="remove-heart">
-                    <i class="fas fa-heart"></i>
+                <div class="review-details-grid">
+                    <section class="review-detail-card">
+                        <h5><i class="fa-regular fa-user"></i> Customer information</h5>
+                        <dl>
+                            <div><dt>Full name</dt><dd id="reviewFullName">—</dd></div>
+                            <div><dt>Phone</dt><dd id="reviewPhone">—</dd></div>
+                            <div><dt>Email</dt><dd id="reviewEmail">—</dd></div>
+                        </dl>
+                    </section>
+
+                    <section class="review-detail-card">
+                        <h5><i class="fa-solid fa-location-dot"></i> Delivery information</h5>
+                        <dl>
+                            <div><dt>Delivery address</dt><dd id="reviewAddress">—</dd></div>
+                            <div><dt>Distance from shop</dt><dd id="reviewDistance">—</dd></div>
+                            <div><dt>Delivery fee</dt><dd id="reviewDeliveryFee">—</dd></div>
+                        </dl>
+                        <div class="review-map-info">
+                            <i class="fa-solid fa-map-pin"></i>
+                            <span id="reviewCoordinates">Map pin not selected</span>
+                            <a id="reviewMapLink" href="#" target="_blank" rel="noopener">Open map</a>
+                        </div>
+                    </section>
+
+                    <section class="review-detail-card review-payment-card">
+                        <h5><i class="fa-regular fa-credit-card"></i> Payment method</h5>
+                        <dl>
+                            <div><dt>Method</dt><dd id="reviewPaymentMethod">—</dd></div>
+                            <div id="reviewReferenceRow" hidden><dt>GCash reference</dt><dd id="reviewGcashReference">—</dd></div>
+                        </dl>
+                    </section>
                 </div>
 
-                <h4 class="remove-title">
-                    Confirm Your Order?
-                </h4>
+                <section class="review-items-section">
+                    <div class="review-section-heading">
+                        <h5>Items in this order</h5>
+                        <span id="reviewItemCount">0 items</span>
+                    </div>
+                    <div id="reviewOrderItems" class="review-order-items"></div>
+                </section>
 
-                <p class="remove-message">
-                    Are you sure you want to place your order?
-                    Please double-check your customer information,
-                    delivery address, payment method, and order details
-                    before continuing.
-                </p>
+                <section class="review-totals">
+                    <div><span>Subtotal</span><strong id="reviewSubtotal">₱0.00</strong></div>
+                    <div><span>VAT (12%)</span><strong id="reviewTax">₱0.00</strong></div>
+                    <div><span>Delivery fee</span><strong id="reviewTotalDelivery">₱0.00</strong></div>
+                    <div class="review-grand-total"><span>Total to pay</span><strong id="reviewTotal">₱0.00</strong></div>
+                </section>
 
                 <div class="remove-actions">
 
@@ -666,7 +699,7 @@ include('./admin/includes/topbar.php');
                         class="btn keep-item-btn"
                         data-bs-dismiss="modal"
                     >
-                        Review Order
+                        Back to checkout
                     </button>
 
                     <button
@@ -674,7 +707,7 @@ include('./admin/includes/topbar.php');
                         class="btn confirm-remove-btn"
                         id="confirmOrder"
                     >
-                        Yes, Place Order
+                        Confirm and place order
                     </button>
 
                 </div>
@@ -705,7 +738,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // CONFIGURATION
     // ==========================================
 
-    const API_URL = "http://localhost:3000";
+    const API_URL = "/api";
 
     const selectedCartIDs = <?php
         echo json_encode(
@@ -795,6 +828,8 @@ document.addEventListener("DOMContentLoaded", function () {
     // Null means no eligible delivery location has been selected.
     let currentDeliveryFeeCents = null;
     let currentDistanceKm = null;
+    let addressSearchTimer = null;
+    let addressSearchController = null;
 
     const orderModalElement =
         document.getElementById("orderConfirmModal");
@@ -1033,6 +1068,105 @@ document.addEventListener("DOMContentLoaded", function () {
 
     }
 
+    function scheduleAddressSearch(address) {
+        const query = String(address || "").trim();
+        clearTimeout(addressSearchTimer);
+        if (addressSearchController) {
+            addressSearchController.abort();
+            addressSearchController = null;
+        }
+
+        if (query.length < 4) {
+            coordinatesLabel.textContent = query
+                ? "Enter a place name or address to search the CDO map."
+                : "No delivery location selected yet.";
+            coordinatesLabel.style.color = "#8A7770";
+            return;
+        }
+
+        coordinatesLabel.textContent = "Searching the map for this address…";
+        coordinatesLabel.style.color = "#8A7770";
+        addressSearchTimer = setTimeout(() => geocodeDeliveryAddress(query), 1100);
+    }
+
+    async function geocodeDeliveryAddress(query) {
+        const controller = new AbortController();
+        addressSearchController = controller;
+
+        try {
+            const url = new URL("https://nominatim.openstreetmap.org/search");
+            url.searchParams.set("format", "jsonv2");
+            // OSM lists this local hotel as “Hamersons” (one m), while
+            // customers commonly type “Hammersons”. Keep their input intact
+            // and normalize the lookup text only.
+            const lookupQuery = query.replace(/\bhammersons\b/gi, "Hamersons");
+            const cityScopedQuery = /cagayan\s+de\s+oro/i.test(lookupQuery)
+                ? lookupQuery
+                : `${lookupQuery}, Cagayan de Oro`;
+            url.searchParams.set("q", cityScopedQuery);
+            url.searchParams.set("countrycodes", "ph");
+            // Focus and bound place-name lookups to the local CDO delivery area.
+            url.searchParams.set("viewbox", "124.54,8.57,124.75,8.38");
+            url.searchParams.set("bounded", "1");
+            url.searchParams.set("limit", "5");
+            url.searchParams.set("addressdetails", "1");
+            url.searchParams.set("accept-language", "en");
+
+            const response = await fetch(url.toString(), {
+                signal: controller.signal,
+                headers: { "Accept": "application/json" }
+            });
+            if (!response.ok) throw new Error("Map address search failed.");
+
+            const results = await response.json();
+            if (addressInput.value.trim() !== query) return;
+
+            if (!Array.isArray(results) || !results.length) {
+                coordinatesLabel.textContent =
+                    "Address not found. Add your barangay and city, or pin the location manually.";
+                coordinatesLabel.style.color = "#dc3545";
+                return;
+            }
+
+            const match = results.find(result => {
+                const lat = Number(result.lat);
+                const lng = Number(result.lon);
+                return Number.isFinite(lat) && Number.isFinite(lng) &&
+                    calculateDistance(SHOP_LATITUDE, SHOP_LONGITUDE, lat, lng) <= 10;
+            });
+
+            if (!match) {
+                coordinatesLabel.textContent =
+                    "That place is outside our CDO delivery area. Search for a place in Cagayan de Oro.";
+                coordinatesLabel.style.color = "#dc3545";
+                return;
+            }
+
+            const latitude = Number(match.lat);
+            const longitude = Number(match.lon);
+            if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+                throw new Error("Map returned an invalid location.");
+            }
+
+            setDeliveryLocation(latitude, longitude, { fromAddressSearch: true });
+            coordinatesLabel.textContent =
+                `Found ${match.name || match.display_name.split(",").slice(0, 2).join(", ")} in CDO.`;
+            coordinatesLabel.style.color = "#198754";
+        } catch (error) {
+            if (error.name === "AbortError") return;
+            console.error("Delivery address search error:", error);
+            if (addressInput.value.trim() === query) {
+                coordinatesLabel.textContent =
+                    "Map search is unavailable right now. Please pin your location manually.";
+                coordinatesLabel.style.color = "#dc3545";
+            }
+        } finally {
+            if (addressSearchController === controller) {
+                addressSearchController = null;
+            }
+        }
+    }
+
     // ==========================================
     // DELIVERY MAP
     // ==========================================
@@ -1097,7 +1231,15 @@ document.addEventListener("DOMContentLoaded", function () {
     // SET DELIVERY LOCATION
     // ==========================================
 
-    function setDeliveryLocation(lat, lng) {
+    function setDeliveryLocation(lat, lng, options = {}) {
+        const fromAddressSearch = options.fromAddressSearch === true;
+        if (!fromAddressSearch) {
+            clearTimeout(addressSearchTimer);
+            if (addressSearchController) {
+                addressSearchController.abort();
+                addressSearchController = null;
+            }
+        }
 
         latitudeInput.value = Number(lat).toFixed(8);
         longitudeInput.value = Number(lng).toFixed(8);
@@ -1133,9 +1275,29 @@ document.addEventListener("DOMContentLoaded", function () {
         // Recalculate the estimate whenever the pin changes.
         updateDeliveryEstimate();
 
-        reverseGeocode(lat, lng);
+        if (!fromAddressSearch) reverseGeocode(lat, lng);
 
     }
+
+    addressInput.addEventListener("input", function () {
+        clearTimeout(reverseGeocodeTimer);
+        if (reverseGeocodeController) {
+            reverseGeocodeController.abort();
+            reverseGeocodeController = null;
+        }
+
+        // Invalidate an older map pin as soon as its address is edited.
+        latitudeInput.value = "";
+        longitudeInput.value = "";
+        if (deliveryMarker) {
+            deliveryMap.removeLayer(deliveryMarker);
+            deliveryMarker = null;
+        }
+        currentDeliveryFeeCents = null;
+        currentDistanceKm = null;
+        updateDeliveryEstimate();
+        scheduleAddressSearch(addressInput.value);
+    });
 
     // ==========================================
     // CURRENT LOCATION
@@ -1219,6 +1381,12 @@ document.addEventListener("DOMContentLoaded", function () {
         latitudeInput.value = "";
         longitudeInput.value = "";
         lastGeocodedCoordinates = "";
+
+        clearTimeout(addressSearchTimer);
+        if (addressSearchController) {
+            addressSearchController.abort();
+            addressSearchController = null;
+        }
 
         clearTimeout(reverseGeocodeTimer);
 
@@ -1420,9 +1588,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
             const image = document.createElement("img");
 
-            image.src =
-                "assets/product_img/" +
-                encodeURIComponent(item.img || "");
+            image.src = /^https?:\/\//i.test(String(item.img || ""))
+                ? item.img
+                : "assets/product_img/" + encodeURIComponent(item.img || "");
 
             image.alt = item.productName || "Product";
 
@@ -1496,6 +1664,90 @@ document.addEventListener("DOMContentLoaded", function () {
 
     }
 
+    function renderOrderReview() {
+        const fullName = fullNameInput.value.trim();
+        const phone = phoneInput.value.trim();
+        const email = emailInput.value.trim();
+        const address = addressInput.value.trim();
+        const latitude = Number(latitudeInput.value);
+        const longitude = Number(longitudeInput.value);
+        const paymentMethod = document.querySelector(
+            'input[name="payment_method"]:checked'
+        )?.value || "—";
+        const gcashReference = gcashReferenceInput.value.trim();
+
+        document.getElementById("reviewFullName").textContent = fullName;
+        document.getElementById("reviewPhone").textContent = phone;
+        document.getElementById("reviewEmail").textContent = email;
+        document.getElementById("reviewAddress").textContent = address;
+        document.getElementById("reviewDistance").textContent =
+            `${currentDistanceKm.toFixed(2)} km from SweetClaire`;
+        document.getElementById("reviewDeliveryFee").textContent =
+            `₱${formatPrice(currentDeliveryFeeCents / 100)}`;
+        document.getElementById("reviewCoordinates").textContent =
+            `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+
+        const mapLink = document.getElementById("reviewMapLink");
+        mapLink.href = `https://www.openstreetmap.org/?mlat=${encodeURIComponent(latitude)}&mlon=${encodeURIComponent(longitude)}#map=17/${encodeURIComponent(latitude)}/${encodeURIComponent(longitude)}`;
+
+        document.getElementById("reviewPaymentMethod").textContent =
+            paymentMethod === "Cash" ? "Cash on Delivery" : paymentMethod;
+        document.getElementById("reviewReferenceRow").hidden =
+            paymentMethod !== "GCash";
+        document.getElementById("reviewGcashReference").textContent =
+            gcashReference || "—";
+
+        const itemsContainer = document.getElementById("reviewOrderItems");
+        itemsContainer.replaceChildren();
+        let subtotalCents = 0;
+        let totalQuantity = 0;
+
+        selectedCartItems.forEach(item => {
+            const quantity = Number(item.quantity);
+            const priceCents = Math.round(Number(item.price) * 100);
+            const lineTotalCents = priceCents * quantity;
+            subtotalCents += lineTotalCents;
+            totalQuantity += quantity;
+
+            const row = document.createElement("div");
+            row.className = "review-order-item";
+
+            const image = document.createElement("img");
+            image.src = /^https?:\/\//i.test(String(item.img || ""))
+                ? item.img
+                : `assets/product_img/${encodeURIComponent(item.img || "")}`;
+            image.alt = item.productName || "Product";
+            image.onerror = () => { image.style.visibility = "hidden"; };
+
+            const details = document.createElement("div");
+            details.className = "review-item-details";
+            const name = document.createElement("strong");
+            name.textContent = item.productName || "Product";
+            const unit = document.createElement("small");
+            unit.textContent = `${quantity} × ₱${formatPrice(priceCents / 100)}`;
+            details.append(name, unit);
+
+            const lineTotal = document.createElement("strong");
+            lineTotal.className = "review-item-price";
+            lineTotal.textContent = `₱${formatPrice(lineTotalCents / 100)}`;
+            row.append(image, details, lineTotal);
+            itemsContainer.appendChild(row);
+        });
+
+        const taxCents = Math.round(subtotalCents * 0.12);
+        const totalCents = subtotalCents + taxCents + currentDeliveryFeeCents;
+        document.getElementById("reviewItemCount").textContent =
+            `${totalQuantity} ${totalQuantity === 1 ? "item" : "items"}`;
+        document.getElementById("reviewSubtotal").textContent =
+            `₱${formatPrice(subtotalCents / 100)}`;
+        document.getElementById("reviewTax").textContent =
+            `₱${formatPrice(taxCents / 100)}`;
+        document.getElementById("reviewTotalDelivery").textContent =
+            `₱${formatPrice(currentDeliveryFeeCents / 100)}`;
+        document.getElementById("reviewTotal").textContent =
+            `₱${formatPrice(totalCents / 100)}`;
+    }
+
     // ==========================================
     // LOAD SELECTED PRODUCTS
     // ==========================================
@@ -1557,6 +1809,10 @@ document.addEventListener("DOMContentLoaded", function () {
             initializeDeliveryMap();
 
             updatePaymentSelection();
+
+            if (addressInput.value.trim().length >= 4) {
+                scheduleAddressSearch(addressInput.value);
+            }
 
         } catch (error) {
 
@@ -1704,6 +1960,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (!validateCheckout()) return;
 
+        renderOrderReview();
         orderModal.show();
 
     });
@@ -1962,12 +2219,12 @@ document.addEventListener("DOMContentLoaded", function () {
             confirmOrderButton.disabled = false;
 
             confirmOrderButton.textContent =
-                "Yes, Place Order";
+                "Confirm and place order";
 
             placeOrderButton.disabled = false;
 
             placeOrderButton.innerHTML =
-                'PLACE ORDER <span>→</span>';
+                'ORDER SUMMARY <span>→</span>';
 
         }
 

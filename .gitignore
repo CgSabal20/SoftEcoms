@@ -17,4 +17,5 @@ Thumbs.db
 
 # User-uploaded profile images
 public/assets/profile_img/*
+!public/assets/profile_img/default-avatar.svg
 !public/assets/profile_img/profile_1_2905e3fd6481701b.jpg

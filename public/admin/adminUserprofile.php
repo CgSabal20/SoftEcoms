@@ -15,7 +15,10 @@ if (!$customerId || $customerId < 1) {
 }
 ?>
 
-<div class="container-fluid py-4">
+<div class="dashboard-layout">
+    <?php include_once __DIR__ . "/includes/sidebar.php"; ?>
+    <div class="main-content">
+        <div class="container-fluid py-4">
 
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
@@ -40,7 +43,7 @@ if (!$customerId || $customerId < 1) {
 
                     <img
                         id="previewImg"
-                        src="/SoftEcoms/public/assets/profile_img/default.png"
+                        src="/SoftEcoms/public/assets/profile_img/default-avatar.svg"
                         alt="Customer profile"
                         class="rounded-circle border"
                         width="130"
@@ -56,7 +59,7 @@ if (!$customerId || $customerId < 1) {
                             accept="image/jpeg,image/png,image/webp"
                             disabled
                         >
-                        <small class="text-muted">JPG, PNG, WEBP — maximum 5 MB</small>
+                        <small class="text-muted">JPG, PNG, WEBP — maximum 3 MB</small>
                     </div>
 
                 </div>
@@ -371,7 +374,7 @@ if (!$customerId || $customerId < 1) {
 </div>
 
 <script>
-const API_URL = "http://localhost:3000";
+const API_URL = "/api";
 const CUSTOMER_ID = <?= json_encode($customerId) ?>;
 
 let customerData = null;
@@ -529,7 +532,7 @@ async function loadCustomerProfile() {
 
         originalProfileImage = customer.profileImageUrl
             ? customer.profileImageUrl
-            : "/SoftEcoms/public/assets/profile_img/default.png";
+            : "/SoftEcoms/public/assets/profile_img/default-avatar.svg";
 
         document.getElementById("previewImg").src =
             originalProfileImage;
@@ -713,9 +716,9 @@ document.getElementById("profilePictureInput").addEventListener(
             return;
         }
 
-        if (file.size > 5 * 1024 * 1024) {
+        if (file.size > 3 * 1024 * 1024) {
 
-            showMessage("The profile picture must be 5 MB or smaller.", "danger");
+            showMessage("The profile picture must be 3 MB or smaller.", "danger");
 
             event.target.value = "";
             selectedProfileImage = null;
@@ -1026,6 +1029,10 @@ document.addEventListener("DOMContentLoaded", () => {
     loadCustomerProfile();
 });
 </script>
+
+        </div>
+    </div>
+</div>
 
 <?php
 include_once __DIR__ . "/includes/footer.php";

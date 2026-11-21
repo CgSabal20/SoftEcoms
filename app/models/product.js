@@ -64,6 +64,27 @@ class Product {
     return rows[0] || null;
   }
 
+  async createProduct({ productName, productDescription, price, img, stock }) {
+    const name = String(productName || "").trim();
+    const description = String(productDescription || "").trim();
+    const amount = Number(price);
+    const quantity = Number(stock);
+
+    if (!name || name.length > 255) throw new Error("Product name is required and must be 255 characters or fewer.");
+    if (!description || description.length > 255) throw new Error("Description is required and must be 255 characters or fewer.");
+    if (!Number.isFinite(amount) || amount <= 0 || amount > 99999999.99) throw new Error("Enter a valid product price.");
+    if (!Number.isSafeInteger(quantity) || quantity < 0 || quantity > 2147483647) throw new Error("Stock must be a non-negative whole number.");
+
+    const uuid = require("crypto").randomUUID();
+    const [result] = await this.db.execute(
+      `INSERT INTO product_item (uuid, productName, productDescription, price, img, stock)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [uuid, name, description, amount.toFixed(2), img || null, quantity],
+    );
+
+    return { id: result.insertId, uuid, productName: name, stock: quantity };
+  }
+
   // ==========================================
   // UPDATE PRODUCT STOCK
   // Sets stock to an exact quantity
@@ -171,11 +192,6 @@ class Product {
     }
   }
 
-  // ==========================================
-  // REMOVE STOCK
-  // Subtracts quantity from existing stock
-  // ==========================================
-
   async removeStock(id, quantityToRemove) {
     const productId = Number(id);
     const quantity = Number(quantityToRemove);
@@ -243,10 +259,6 @@ class Product {
     }
   }
 
-  // ==========================================
-  // GET LOW-STOCK PRODUCTS
-  // ==========================================
-
   async getLowStockProducts(threshold = 5) {
     const limit = Number(threshold);
 
@@ -264,10 +276,6 @@ class Product {
 
     return rows;
   }
-
-  // ==========================================
-  // CHECK STOCK AVAILABILITY
-  // ==========================================
 
   async checkStockAvailability(productUUID, requestedQuantity) {
     const cleanUUID = String(productUUID || "").trim();

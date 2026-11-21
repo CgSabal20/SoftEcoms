@@ -4,11 +4,9 @@ session_start();
 
 $pageClass = "contact-page";
 
-include('./admin/includes/header.php');
-include('./admin/includes/topbar.php');
+include('./includes/header.php');
+include('./includes/topbar.php');
 ?>
-
-<link rel="stylesheet" href="assets/css/contact.css">
 
 <main class="contact-page">
 

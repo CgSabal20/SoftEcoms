@@ -2,8 +2,8 @@
 <?php
 $pageClass = "checkout-page";
 
-include_once __DIR__ . '/../admin/includes/header.php';
-include_once __DIR__ . '/../admin/includes/topbar.php';
+include_once __DIR__ . '/../includes/header.php';
+include_once __DIR__ . '/../includes/topbar.php';
 ?>
 
 <link rel="stylesheet" href="assets/css/checkout.css">
@@ -113,7 +113,7 @@ include_once __DIR__ . '/../admin/includes/topbar.php';
                 <h2 id="totalAmount"></h2>
             </div>
 
-            <a href="orderHistory.php" class="continue-shopping">
+            <a href="/SoftEcoms/public/order.php" class="continue-shopping">
                 Back to My Orders
             </a>
 
@@ -126,7 +126,7 @@ include_once __DIR__ . '/../admin/includes/topbar.php';
 <script>
 document.addEventListener("DOMContentLoaded", async () => {
 
-    const API_URL = "http://localhost:3000";
+    const API_URL = "/api";
 
     const loading = document.getElementById("receiptLoading");
     const content = document.getElementById("receiptContent");
@@ -282,7 +282,3 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 });
 </script>
-
-<?php
-include_once __DIR__ . '/../admin/includes/footer.php';
-?>

@@ -5,7 +5,7 @@ session_start();
 $pageClass = "cart-page";
 
 include('./admin/includes/header.php');
-include('./admin/includes/topbar.php');
+include('./includes/topbar.php');
 ?>
 
 
@@ -201,7 +201,7 @@ include('./admin/includes/topbar.php');
 
 document.addEventListener("DOMContentLoaded", () => {
 
-    const API_URL = "http://localhost:3000";
+    const API_URL = "/api";
 
     const cartLoading = document.getElementById("cartLoading");
     const cartError = document.getElementById("cartError");
@@ -418,7 +418,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const image = document.createElement("img");
 
-            image.src = "assets/product_img/" + encodeURIComponent(item.img || "");
+            image.src = /^https?:\/\//i.test(String(item.img || "")) ? item.img : "assets/product_img/" + encodeURIComponent(item.img || "");
             image.alt = item.productName || "Product";
             image.className = "img-fluid rounded-4";
             image.style.height = "120px";

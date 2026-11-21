@@ -1,7 +1,7 @@
-const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
 const bcrypt = require("bcrypt");
+const { resolveImageUrl, storePublicImage, removePublicImage } = require("../config/mediaStorage");
 
 class AdminCustomerController {
   constructor(db) {
@@ -28,6 +28,18 @@ class AdminCustomerController {
     }
 
     return true;
+  }
+
+  async logCustomerChange(req, actionType, description) {
+    try {
+      const adminId = Number(req.session?.user_id || req.session?.authUser?.user_id);
+      await this.db.execute(
+        "INSERT INTO admin_changelog (admin_id, action_type, description) VALUES (?, ?, ?)",
+        [adminId || null, actionType, description],
+      );
+    } catch (error) {
+      console.error("Customer activity log error:", error);
+    }
   }
 
   // ==========================================
@@ -114,9 +126,7 @@ class AdminCustomerController {
         success: true,
         customer: {
           ...customer,
-          profileImageUrl: customer.profile
-            ? `/SoftEcoms/public/assets/profile_img/${encodeURIComponent(customer.profile)}`
-            : null,
+          profileImageUrl: resolveImageUrl(customer.profile, "/SoftEcoms/public/assets/profile_img/"),
         },
         statistics: statistics[0],
         orders,
@@ -138,7 +148,7 @@ class AdminCustomerController {
   updateCustomer = async (req, res) => {
     if (!this.checkAdmin(req, res)) return;
 
-    let savedImagePath = null;
+    let savedImageReference = null;
 
     try {
       const customerId = Number(req.params.id);
@@ -247,10 +257,10 @@ class AdminCustomerController {
         const extension = match[1] === "jpeg" ? "jpg" : match[1];
         const imageBuffer = Buffer.from(match[2], "base64");
 
-        if (!imageBuffer.length || imageBuffer.length > 5 * 1024 * 1024) {
+        if (!imageBuffer.length || imageBuffer.length > 3 * 1024 * 1024) {
           return res.status(400).json({
             success: false,
-            message: "The profile picture must be 5 MB or smaller.",
+            message: "The profile picture must be 3 MB or smaller.",
           });
         }
 
@@ -278,20 +288,16 @@ class AdminCustomerController {
           });
         }
 
-        const uploadDirectory = path.join(
-          __dirname,
-          "../../public/assets/profile_img",
-        );
-
-        await fs.promises.mkdir(uploadDirectory, { recursive: true });
-
+        const uploadDirectory = path.join(__dirname, "../../public/assets/profile_img");
         const filename = `profile_${customerId}_${crypto.randomBytes(8).toString("hex")}.${extension}`;
-
-        savedImagePath = path.join(uploadDirectory, filename);
-
-        await fs.promises.writeFile(savedImagePath, imageBuffer);
-
-        profile = filename;
+        const storedImage = await storePublicImage({
+          buffer: imageBuffer,
+          filename,
+          folder: "profiles",
+          localDirectory: uploadDirectory,
+        });
+        profile = storedImage.reference;
+        savedImageReference = storedImage.reference;
       }
 
       await this.db.execute(
@@ -321,23 +327,17 @@ class AdminCustomerController {
         ],
       );
 
+      await this.logCustomerChange(
+        req,
+        "CUSTOMER_UPDATE",
+        `Updated customer ${firstName} ${lastName} (ID ${customerId}).`,
+      );
+
       // Remove old image only after a successful database update.
       const oldProfile = customers[0].profile;
 
-      if (
-        savedImagePath &&
-        oldProfile &&
-        path.basename(oldProfile) === oldProfile
-      ) {
-        const oldImagePath = path.join(
-          __dirname,
-          "../../public/assets/profile_img",
-          oldProfile,
-        );
-
-        if (oldImagePath !== savedImagePath) {
-          await fs.promises.unlink(oldImagePath).catch(() => {});
-        }
+      if (savedImageReference && oldProfile && oldProfile !== profile) {
+        await removePublicImage(oldProfile, path.join(__dirname, "../../public/assets/profile_img"));
       }
 
       return res.status(200).json({
@@ -346,8 +346,8 @@ class AdminCustomerController {
         profile,
       });
     } catch (error) {
-      if (savedImagePath) {
-        await fs.promises.unlink(savedImagePath).catch(() => {});
+      if (savedImageReference) {
+        await removePublicImage(savedImageReference, path.join(__dirname, "../../public/assets/profile_img"));
       }
 
       console.error("Admin update customer error:", error);
@@ -410,6 +410,12 @@ class AdminCustomerController {
         [hashedPassword, customerId],
       );
 
+      await this.logCustomerChange(
+        req,
+        "CUSTOMER_PASSWORD_RESET",
+        `Reset password for customer ID ${customerId}.`,
+      );
+
       return res.status(200).json({
         success: true,
         message: "Customer password reset successfully.",
@@ -465,6 +471,12 @@ class AdminCustomerController {
           message: "Customer not found.",
         });
       }
+
+      await this.logCustomerChange(
+        req,
+        "CUSTOMER_STATUS",
+        `Set customer ID ${customerId} account status to ${accountStatus}.`,
+      );
 
       return res.status(200).json({
         success: true,

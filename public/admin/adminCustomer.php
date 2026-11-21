@@ -279,8 +279,6 @@ include('../admin/includes/header.php');
 
 ?>
 
-<body class="customers-page">
-
 <div class="dashboard-layout">
 
     <!-- SIDEBAR -->
@@ -295,7 +293,8 @@ include('../admin/includes/header.php');
             <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
 
                 <div>
-                    <h2 class="mb-1">👥 Customers Management</h2>
+                    <span class="admin-eyebrow">CUSTOMER RELATIONSHIPS</span>
+                    <h2 class="mb-1">Customers</h2>
 
                     <p class="text-muted mb-0">
                         Monitor customer accounts and purchasing activity.
@@ -328,7 +327,7 @@ include('../admin/includes/header.php');
                                     </h3>
                                 </div>
 
-                                <div class="fs-2">👥</div>
+                                <div class="admin-stat-icon"><i class="fa-solid fa-users"></i></div>
 
                             </div>
 
@@ -357,7 +356,7 @@ include('../admin/includes/header.php');
                                     </h3>
                                 </div>
 
-                                <div class="fs-2">🟢</div>
+                                <div class="admin-stat-icon is-success"><i class="fa-solid fa-user-check"></i></div>
 
                             </div>
 
@@ -386,7 +385,7 @@ include('../admin/includes/header.php');
                                     </h3>
                                 </div>
 
-                                <div class="fs-2">👤</div>
+                                <div class="admin-stat-icon is-muted"><i class="fa-solid fa-user-clock"></i></div>
 
                             </div>
 
@@ -415,7 +414,7 @@ include('../admin/includes/header.php');
                                     </h3>
                                 </div>
 
-                                <div class="fs-2">📦</div>
+                                <div class="admin-stat-icon is-info"><i class="fa-solid fa-box"></i></div>
 
                             </div>
 

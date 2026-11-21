@@ -116,7 +116,7 @@ if (!$order || empty($orderedItems)) {
 }
 
 include('./admin/includes/header.php');
-include('./admin/includes/topbar.php');
+include('./includes/topbar.php');
 ?>
 
 

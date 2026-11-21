@@ -2,8 +2,8 @@
 <?php
 $pageClass = "cus-order-page";
 
-include_once __DIR__ . '/../admin/includes/header.php';
-include_once __DIR__ . '/../admin/includes/topbar.php';
+include_once __DIR__ . '/../includes/header.php';
+include_once __DIR__ . '/../includes/topbar.php';
 ?>
 
 <main class="container my-4">
@@ -248,7 +248,7 @@ include_once __DIR__ . '/../admin/includes/topbar.php';
 <script>
 document.addEventListener("DOMContentLoaded", () => {
 
-    const API_URL = "http://localhost:3000";
+    const API_URL = "/api";
 
     const ordersTable = document.getElementById("ordersTable");
     const orderMessage = document.getElementById("orderMessage");

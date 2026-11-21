@@ -78,7 +78,6 @@ $isCartPage = ($current_page === 'cart.php');
             <button
                 class="navbar-toggler"
                 type="button"
-                data-bs-toggle="collapse"
                 data-bs-target="#navbarScroll"
                 aria-controls="navbarScroll"
                 aria-expanded="false"
@@ -93,7 +92,7 @@ $isCartPage = ($current_page === 'cart.php');
                      NAVIGATION LINKS
                 ========================================== -->
 
-                <ul class="navbar-nav ms-lg-auto my-2 my-lg-0">
+                <ul class="navbar-nav my-2 my-lg-0">
 
                     <!-- HOME -->
                     <li class="nav-item">
@@ -152,43 +151,14 @@ $isCartPage = ($current_page === 'cart.php');
 
                 </ul>
 
-                <!-- ==========================================
-                     ACCOUNT, RECEIPT AND CART ICONS
-                ========================================== -->
+            </div>
 
-                <div class="d-flex align-items-center gap-3">
+            <div class="navbar-actions">
+                <div id="accountNav">
+                    <a class="account-login" href="/SoftEcoms/public/login.php">Login</a>
+                </div>
 
-                    <!-- ACCOUNT DROPDOWN -->
-                    <div id="accountNav" style="visibility: hidden;">
-
-                        <a
-                            class="nav-link"
-                            href="/SoftEcoms/public/login.php"
-                            style="
-                                background-color: black;
-                                color: #F1D0C9;
-                                padding: 8px 20px;
-                                display: inline-block;
-                            "
-                        >
-                            Login
-                        </a>
-
-                    </div>
-
-                    <!-- RECEIPT / ORDER HISTORY -->
-                    <a
-                        href="/SoftEcoms/public/users/orderHistory.php"
-                        class="nav-icon <?= $current_page === 'orderhistory.php' ? 'active' : '' ?>"
-                        id="receiptIcon"
-                        aria-label="My Order History"
-                        title="Order History"
-                    >
-                        <i class="fas fa-receipt" aria-hidden="true"></i>
-                    </a>
-
-                    <!-- SHOPPING CART -->
-                    <a
+                <a
                         href="/SoftEcoms/public/cart.php"
                         class="nav-icon <?= $isCartPage ? 'active' : '' ?>"
                         id="cartIcon"
@@ -215,10 +185,7 @@ $isCartPage = ($current_page === 'cart.php');
                             style="display: none;"
                         >0</span>
 
-                    </a>
-
-                </div>
-
+                </a>
             </div>
 
         <?php endif; ?>
@@ -233,7 +200,25 @@ $isCartPage = ($current_page === 'cart.php');
 <script>
 document.addEventListener("DOMContentLoaded", function () {
 
-    const API_URL = "http://localhost:3000";
+    const API_URL = "/api";
+    const navToggle = document.querySelector(".navbar-toggler");
+    const navCollapse = document.getElementById("navbarScroll");
+
+    if (navToggle && navCollapse) {
+        navToggle.addEventListener("click", function () {
+            const isOpen = navCollapse.classList.toggle("show");
+            navToggle.setAttribute("aria-expanded", String(isOpen));
+        });
+
+        navCollapse.querySelectorAll(".nav-link").forEach(link => {
+            link.addEventListener("click", () => {
+                if (window.innerWidth < 992) {
+                    navCollapse.classList.remove("show");
+                    navToggle.setAttribute("aria-expanded", "false");
+                }
+            });
+        });
+    }
 
     // ==========================================
     // UPDATE CART COUNTER
@@ -290,9 +275,6 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-    // Refresh cart count on every page
-    refreshCartCount();
-
     // ==========================================
     // ACCOUNT NAVIGATION
     // ==========================================
@@ -302,6 +284,9 @@ document.addEventListener("DOMContentLoaded", function () {
     if (!accountNav) {
         return;
     }
+
+    // Start the cart request alongside the account request to avoid a serial delay.
+    refreshCartCount();
 
     function showAccountNav() {
         accountNav.style.visibility = "visible";
@@ -345,22 +330,52 @@ document.addEventListener("DOMContentLoaded", function () {
             // ==========================================
 
             const wrapper = document.createElement("div");
-            wrapper.className = "nav-item dropdown";
+            wrapper.className = "dropdown account-dropdown";
 
-            const toggle = document.createElement("a");
-
-            toggle.className = "nav-link dropdown-toggle";
-            toggle.href = "#";
-
-            toggle.setAttribute("role", "button");
-            toggle.setAttribute("data-bs-toggle", "dropdown");
+            const toggle = document.createElement("button");
+            toggle.type = "button";
+            toggle.className = "account-toggle dropdown-toggle";
+            toggle.setAttribute("aria-haspopup", "true");
             toggle.setAttribute("aria-expanded", "false");
+            toggle.setAttribute("aria-label", "Open account menu");
 
-            toggle.textContent =
-                user.username || user.fullName || "My Account";
+            const avatar = document.createElement("img");
+            avatar.className = "account-avatar";
+            avatar.alt = "";
+            avatar.src = user.profileImageUrl || (user.profile
+                ? "/SoftEcoms/public/assets/profile_img/" + encodeURIComponent(user.profile)
+                : "/SoftEcoms/public/assets/profile_img/default-avatar.svg");
+            avatar.onerror = () => {
+                avatar.onerror = null;
+                avatar.src = "/SoftEcoms/public/assets/profile_img/default-avatar.svg";
+            };
+            const displayName = document.createElement("span");
+            displayName.className = "account-name";
+            displayName.textContent = user.username || user.fullName || user.firstName || "My Account";
+            toggle.append(avatar, displayName);
 
             const menu = document.createElement("ul");
-            menu.className = "dropdown-menu dropdown-menu-end";
+            menu.className = "dropdown-menu dropdown-menu-end account-menu";
+
+            toggle.addEventListener("click", function () {
+                const isOpen = menu.classList.toggle("show");
+                toggle.setAttribute("aria-expanded", String(isOpen));
+            });
+
+            document.addEventListener("click", function (event) {
+                if (!wrapper.contains(event.target)) {
+                    menu.classList.remove("show");
+                    toggle.setAttribute("aria-expanded", "false");
+                }
+            });
+
+            document.addEventListener("keydown", function (event) {
+                if (event.key === "Escape") {
+                    menu.classList.remove("show");
+                    toggle.setAttribute("aria-expanded", "false");
+                    toggle.focus();
+                }
+            });
 
             // PROFILE
             const profileItem = document.createElement("li");
@@ -435,6 +450,14 @@ document.addEventListener("DOMContentLoaded", function () {
                 dividerItem,
                 logoutItem
             );
+
+            const settingsItem = document.createElement("li");
+            const settingsLink = document.createElement("a");
+            settingsLink.className = "dropdown-item";
+            settingsLink.href = "/SoftEcoms/public/users/settings.php";
+            settingsLink.textContent = "Settings";
+            settingsItem.appendChild(settingsLink);
+            menu.insertBefore(settingsItem, dividerItem);
 
             wrapper.append(toggle, menu);
 

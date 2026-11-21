@@ -4,6 +4,9 @@ const express = require("express");
 const mysql = require("mysql2/promise");
 const session = require("express-session");
 const cors = require("cors");
+const path = require("path");
+const crypto = require("crypto");
+const { storePublicImage, removePublicImage } = require("./app/config/mediaStorage");
 
 // ==========================================
 // CONTROLLER AND MODEL IMPORTS
@@ -24,7 +27,7 @@ const requireAdmin = require("./app/middleware/adminAuth");
 // ==========================================
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.NODE_API_PORT || 3000;
 
 if (!process.env.SESSION_SECRET) {
   throw new Error("SESSION_SECRET is missing from .env");
@@ -58,20 +61,53 @@ app.use(
 // SESSION CONFIGURATION
 // ==========================================
 
-app.use(
-  session({
-    name: "connect.sid",
-    secret: process.env.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: false,
-      maxAge: 60 * 60 * 1000,
-    },
-  }),
-);
+app.set("trust proxy", 1);
+
+class MySQLSessionStore extends session.Store {
+  constructor(pool) {
+    super();
+    this.pool = pool;
+  }
+
+  get(sessionId, callback) {
+    this.pool
+      .execute("SELECT session_data FROM app_sessions WHERE session_id = ? AND expires_at > ?", [sessionId, Date.now()])
+      .then(([rows]) => callback(null, rows.length ? JSON.parse(rows[0].session_data) : null))
+      .catch(callback);
+  }
+
+  set(sessionId, sessionData, callback = () => {}) {
+    const expiry = sessionData.cookie?.expires
+      ? new Date(sessionData.cookie.expires).getTime()
+      : Date.now() + Number(sessionData.cookie?.maxAge || 60 * 60 * 1000);
+    this.pool
+      .execute(
+        `INSERT INTO app_sessions (session_id, session_data, expires_at)
+         VALUES (?, ?, ?)
+         ON DUPLICATE KEY UPDATE session_data = VALUES(session_data), expires_at = VALUES(expires_at)`,
+        [sessionId, JSON.stringify(sessionData), expiry],
+      )
+      .then(() => callback(null))
+      .catch(callback);
+  }
+
+  touch(sessionId, sessionData, callback = () => {}) {
+    const expiry = sessionData.cookie?.expires
+      ? new Date(sessionData.cookie.expires).getTime()
+      : Date.now() + Number(sessionData.cookie?.maxAge || 60 * 60 * 1000);
+    this.pool
+      .execute("UPDATE app_sessions SET expires_at = ? WHERE session_id = ?", [expiry, sessionId])
+      .then(() => callback(null))
+      .catch(callback);
+  }
+
+  destroy(sessionId, callback = () => {}) {
+    this.pool
+      .execute("DELETE FROM app_sessions WHERE session_id = ?", [sessionId])
+      .then(() => callback(null))
+      .catch(callback);
+  }
+}
 
 // ==========================================
 // START SERVER
@@ -90,12 +126,57 @@ async function startServer() {
       user: process.env.DB_USER || "root",
       password: process.env.DB_PASSWORD || "",
       database: process.env.DB_NAME,
+      port: Number(process.env.DB_PORT || 3306),
+      ssl: process.env.DB_SSL === "true" ? { rejectUnauthorized: true } : undefined,
       waitForConnections: true,
       connectionLimit: 10,
       queueLimit: 0,
     });
 
     await db.query("SELECT 1");
+
+    // Keep inventory support present for databases created from older SQL dumps.
+    const [stockColumn] = await db.query("SHOW COLUMNS FROM product_item LIKE 'stock'");
+    if (stockColumn.length === 0) {
+      await db.query("ALTER TABLE product_item ADD COLUMN stock INT NOT NULL DEFAULT 0");
+    }
+
+    const [contactStatusColumn] = await db.query("SHOW COLUMNS FROM contact_messages LIKE 'status'");
+    if (contactStatusColumn.length === 0) {
+      await db.query("ALTER TABLE contact_messages ADD COLUMN status ENUM('unread', 'read', 'replied') NOT NULL DEFAULT 'unread'");
+    }
+
+    await db.query("ALTER TABLE users ALTER COLUMN profile SET DEFAULT 'default-avatar.svg'");
+    await db.execute(
+      "UPDATE users SET profile = ? WHERE profile IS NULL OR TRIM(profile) = ''",
+      ["default-avatar.svg"],
+    );
+
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS app_sessions (
+        session_id VARCHAR(128) NOT NULL PRIMARY KEY,
+        session_data MEDIUMTEXT NOT NULL,
+        expires_at BIGINT UNSIGNED NOT NULL,
+        INDEX app_sessions_expires_at_idx (expires_at)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    `);
+    await db.execute("DELETE FROM app_sessions WHERE expires_at <= ?", [Date.now()]);
+
+    app.use(
+      session({
+        name: "connect.sid",
+        secret: process.env.SESSION_SECRET,
+        store: new MySQLSessionStore(db),
+        resave: false,
+        saveUninitialized: false,
+        cookie: {
+          httpOnly: true,
+          sameSite: "lax",
+          secure: process.env.APP_ENV === "production",
+          maxAge: 60 * 60 * 1000,
+        },
+      }),
+    );
 
     console.log("MySQL connected successfully!");
 
@@ -116,6 +197,18 @@ async function startServer() {
     const adminCustomerController = new AdminCustomerController(db);
 
     const product = new Product(db);
+
+    const logAdminActivity = async (req, actionType, description) => {
+      try {
+        const adminId = Number(req.session?.user_id || req.session?.authUser?.user_id);
+        await db.execute(
+          "INSERT INTO admin_changelog (admin_id, action_type, description) VALUES (?, ?, ?)",
+          [adminId || null, actionType, description],
+        );
+      } catch (error) {
+        console.error("Admin activity log error:", error);
+      }
+    };
 
     // ==========================================
     // GENERAL ROUTES
@@ -154,6 +247,54 @@ async function startServer() {
     // ==========================================
     // PRODUCT ROUTES
     // ==========================================
+
+    app.post("/admin/products", requireAdmin, async (req, res) => {
+      let savedImageReference = null;
+      try {
+        const { productName, productDescription, price, stock, imageData } = req.body || {};
+        let imageName = null;
+
+        if (imageData) {
+          const match = /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/.exec(String(imageData));
+          if (!match) return res.status(400).json({ success: false, message: "Choose a JPG, PNG, or WEBP image." });
+
+          const imageBuffer = Buffer.from(match[2], "base64");
+          if (!imageBuffer.length || imageBuffer.length > 3 * 1024 * 1024) {
+            return res.status(400).json({ success: false, message: "Product images must be 3 MB or smaller." });
+          }
+
+          const isValidImage = match[1] === "image/jpeg"
+            ? imageBuffer[0] === 0xff && imageBuffer[1] === 0xd8 && imageBuffer[2] === 0xff
+            : match[1] === "image/png"
+              ? imageBuffer.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))
+              : imageBuffer.subarray(0, 4).toString() === "RIFF" && imageBuffer.subarray(8, 12).toString() === "WEBP";
+          if (!isValidImage) return res.status(400).json({ success: false, message: "The selected file is not a valid image." });
+
+          const extension = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" }[match[1]];
+          const filename = `p${crypto.randomBytes(6).toString("hex")}.${extension}`;
+          const imageDirectory = path.join(__dirname, "public", "assets", "product_img");
+          const storedImage = await storePublicImage({
+            buffer: imageBuffer,
+            filename,
+            folder: "products",
+            localDirectory: imageDirectory,
+          });
+          imageName = storedImage.reference;
+          savedImageReference = storedImage.reference;
+        }
+
+        const created = await product.createProduct({ productName, productDescription, price, stock, img: imageName });
+        await logAdminActivity(req, "PRODUCT_CREATE", `Added product \"${created.productName}\" (ID ${created.id}).`);
+        return res.status(201).json({ success: true, message: "Product added successfully.", product: created });
+      } catch (error) {
+        if (savedImageReference) {
+          await removePublicImage(savedImageReference, path.join(__dirname, "public", "assets", "product_img"));
+        }
+        console.error("Create product error:", error);
+        const status = error.message.startsWith("Product ") || error.message.startsWith("Description ") || error.message.startsWith("Enter ") || error.message.startsWith("Stock ") ? 400 : 500;
+        return res.status(status).json({ success: false, message: status === 400 ? error.message : "Unable to add product. Check the product table schema and try again." });
+      }
+    });
 
     // Get all products
     app.get("/products", async (req, res) => {
@@ -218,6 +359,7 @@ async function startServer() {
         }
 
         const result = await product.addStock(req.params.id, quantity);
+        await logAdminActivity(req, "INVENTORY_UPDATE", `Added ${result.addedStock} units to \"${result.productName}\" (ID ${result.productId}); stock is now ${result.stock}.`);
 
         return res.status(200).json({
           success: true,
@@ -249,6 +391,7 @@ async function startServer() {
         }
 
         const result = await product.removeStock(req.params.id, quantity);
+        await logAdminActivity(req, "INVENTORY_UPDATE", `Removed ${result.removedStock} units from \"${result.productName}\" (ID ${result.productId}); stock is now ${result.stock}.`);
 
         return res.status(200).json({
           success: true,
@@ -280,6 +423,7 @@ async function startServer() {
         }
 
         const result = await product.updateStock(req.params.id, stock);
+        await logAdminActivity(req, "INVENTORY_UPDATE", `Set stock for product ID ${result.productId} to ${result.stock}.`);
 
         return res.status(200).json({
           success: true,
@@ -468,6 +612,13 @@ async function startServer() {
       "/contact/messages/:id/status",
       requireAdmin,
       contactController.updateMessageStatus,
+    );
+
+    // Admin replies to a customer inquiry by email.
+    app.post(
+      "/contact/messages/:id/reply",
+      requireAdmin,
+      contactController.replyToMessage,
     );
 
     // ==========================================
