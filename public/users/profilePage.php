@@ -31,7 +31,6 @@ include_once __DIR__ . "/../includes/topbar.php";
     </section>
 </main>
 
-<?php include_once __DIR__ . "/../includes/footer.php"; ?>
 <script>
 document.addEventListener("DOMContentLoaded", async () => {
   try {

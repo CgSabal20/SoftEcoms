@@ -102,7 +102,7 @@ if ($sidebar_total_orders_result) {
             <div class="stat-item">
 
                 <div class="stat-label">
-                    💰 Total Revenue
+                    Total Revenue
                 </div>
 
                 <div class="stat-value">
@@ -115,7 +115,7 @@ if ($sidebar_total_orders_result) {
             <div class="stat-item">
 
                 <div class="stat-label">
-                    📦 Completed Orders
+                    Completed Orders
                 </div>
 
                 <div class="stat-value">
@@ -133,7 +133,6 @@ if ($sidebar_total_orders_result) {
     <form id="logoutForm">
 
         <button type="submit" class="logout-btn">
-            <span>🚪</span>
             Logout
         </button>
 
