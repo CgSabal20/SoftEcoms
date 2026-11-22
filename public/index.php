@@ -378,7 +378,6 @@ function sweetProductImage($imageName)
                 </div>
             </div>
             <div class="modal-footer quick-view-footer">
-                <button type="button" class="btn quick-view-back" data-bs-dismiss="modal">Back</button>
                 <button type="button" class="btn quick-view-add" id="bestSellerOrderNow"><i class="fa-solid fa-bag-shopping"></i> Order Now</button>
             </div>
         </div>
