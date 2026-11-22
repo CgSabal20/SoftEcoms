@@ -82,6 +82,34 @@ include('./includes/topbar.php');
     color: #d18a00;
     font-weight: 700;
 }
+
+/* Unavailable product card */
+.cart-item-card.unavailable {
+    opacity: 0.7;
+    background-color: #f7f7f7;
+    border: 2px solid #e5e5e5;
+    cursor: not-allowed;
+}
+
+/* Keep the Remove button clear and clickable */
+.cart-item-card.unavailable .btn-link {
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    color: #dc3545 !important;
+    font-weight: 700 !important;
+    text-decoration: underline !important;
+    display: inline-block !important;
+}
+
+/* Keep the Remove button clear when focused */
+.cart-item-card.unavailable .btn-link:focus {
+    opacity: 1 !important;
+    color: #a71d2a !important;
+    outline: 2px solid #dc3545;
+    outline-offset: 3px;
+}
 </style>
 
 <div class="container cart-layout my-5">
