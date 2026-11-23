@@ -1,11 +1,16 @@
 
 <?php
 session_start();
+
 $pageClass = "order-page";
 
 include('includes/header.php');
 include('includes/topbar.php');
 include_once("../app/config/config.php");
+
+/* ==========================================
+   PRODUCT IMAGE HELPER
+========================================== */
 
 if (!function_exists('sweetProductImage')) {
     function sweetProductImage($imageName)
@@ -17,6 +22,7 @@ if (!function_exists('sweetProductImage')) {
         }
 
         $imageName = basename((string) $imageName);
+
         $dir = __DIR__ . "/assets/product_img/";
         $url = "/SoftEcoms/public/assets/product_img/";
 
@@ -27,6 +33,10 @@ if (!function_exists('sweetProductImage')) {
         return $url . "placeholder.jpg";
     }
 }
+
+/* ==========================================
+   SORT OPTIONS
+========================================== */
 
 $sortOptions = [
     'new'        => 'id DESC',
@@ -48,7 +58,10 @@ if (!isset($sortOptions[$sort])) {
 
 $q = trim($_GET['q'] ?? '');
 
-// Include stock in the product query.
+/* ==========================================
+   FETCH PRODUCTS
+========================================== */
+
 $sql = "SELECT id, uuid, productName, productDescription, price, img, stock
         FROM product_item
         WHERE productName LIKE ?
@@ -70,9 +83,17 @@ $products = mysqli_fetch_all(
 mysqli_stmt_close($stmt);
 ?>
 
+<!-- ==========================================
+     PRODUCT BANNER
+========================================== -->
+
 <div class="order-banner">
     <h1>Our Pastries</h1>
 </div>
+
+<!-- ==========================================
+     PRODUCT LISTING
+========================================== -->
 
 <section class="order-listing">
     <div class="order-panel">
@@ -80,24 +101,36 @@ mysqli_stmt_close($stmt);
         <div class="order-toolbar">
 
             <form method="get">
-                <input type="hidden"
-                       name="sort"
-                       value="<?= htmlspecialchars($sort) ?>">
 
-                <input type="search"
-                       name="q"
-                       class="form-control rounded-pill"
-                       placeholder="Search"
-                       value="<?= htmlspecialchars($q) ?>">
+                <input
+                    type="hidden"
+                    name="sort"
+                    value="<?= htmlspecialchars($sort) ?>"
+                >
+
+                <input
+                    type="search"
+                    name="q"
+                    class="form-control rounded-pill"
+                    placeholder="Search"
+                    value="<?= htmlspecialchars($q) ?>"
+                >
+
             </form>
 
             <div class="sort-chips">
+
                 <?php foreach ($sortLabels as $key => $label): ?>
-                    <a class="sort-chip <?= $sort === $key ? 'active' : '' ?>"
-                       href="?sort=<?= $key ?>&q=<?= urlencode($q) ?>">
+
+                    <a
+                        class="sort-chip <?= $sort === $key ? 'active' : '' ?>"
+                        href="?sort=<?= $key ?>&q=<?= urlencode($q) ?>"
+                    >
                         <?= $label ?>
                     </a>
+
                 <?php endforeach; ?>
+
             </div>
 
         </div>
@@ -167,7 +200,9 @@ mysqli_stmt_close($stmt);
                             fetchpriority="low"
                         >
 
-                        <h6><?= htmlspecialchars($p['productName'] ?? '') ?></h6>
+                        <h6>
+                            <?= htmlspecialchars($p['productName'] ?? '') ?>
+                        </h6>
 
                         <p class="price">
                             ₱<?= number_format((float) $p['price'], 2) ?>
@@ -184,8 +219,9 @@ mysqli_stmt_close($stmt);
     </div>
 </section>
 
-
-<!-- PRODUCT QUICK VIEW MODAL -->
+<!-- ==========================================
+     PRODUCT QUICK VIEW MODAL
+========================================== -->
 
 <div
     class="modal fade"
@@ -199,9 +235,12 @@ mysqli_stmt_close($stmt);
 
         <div class="modal-content quick-view-content">
 
+            <!-- MODAL HEADER -->
+
             <div class="modal-header">
 
                 <div>
+
                     <span class="quick-view-eyebrow">
                         SWEETCLAIRE PASTRIES
                     </span>
@@ -209,6 +248,7 @@ mysqli_stmt_close($stmt);
                     <h2 class="modal-title" id="quickViewTitle">
                         Product details
                     </h2>
+
                 </div>
 
                 <button
@@ -220,10 +260,13 @@ mysqli_stmt_close($stmt);
 
             </div>
 
+            <!-- MODAL BODY -->
 
             <div class="modal-body">
 
                 <div class="quick-view-layout">
+
+                    <!-- PRODUCT IMAGE -->
 
                     <div class="quick-view-image-wrap">
 
@@ -235,6 +278,7 @@ mysqli_stmt_close($stmt);
 
                     </div>
 
+                    <!-- PRODUCT DETAILS -->
 
                     <div class="quick-view-details">
 
@@ -251,10 +295,13 @@ mysqli_stmt_close($stmt);
                         ></p>
 
                         <!-- AVAILABLE STOCK -->
+
                         <p
                             id="quickViewStock"
                             class="small fw-bold mb-3"
                         ></p>
+
+                        <!-- MESSAGE: ERRORS ONLY -->
 
                         <div
                             id="quickViewMessage"
@@ -262,8 +309,8 @@ mysqli_stmt_close($stmt);
                             aria-live="polite"
                         ></div>
 
-
                         <!-- QUANTITY -->
+
                         <label
                             class="quick-view-quantity-label"
                             for="quickViewQuantity"
@@ -306,6 +353,7 @@ mysqli_stmt_close($stmt);
 
             </div>
 
+            <!-- MODAL FOOTER -->
 
             <div class="modal-footer quick-view-footer">
 
@@ -326,6 +374,9 @@ mysqli_stmt_close($stmt);
 
 </div>
 
+<!-- ==========================================
+     BOOTSTRAP
+========================================== -->
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
@@ -334,30 +385,149 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const modalElement = document.getElementById("productQuickView");
 
+    if (!modalElement || typeof bootstrap === "undefined") {
+        return;
+    }
+
     const quickView = bootstrap.Modal.getOrCreateInstance(modalElement);
 
     const quantity = document.getElementById("quickViewQuantity");
-
     const message = document.getElementById("quickViewMessage");
-
     const addButton = document.getElementById("quickViewAdd");
-
     const cartIcon = document.getElementById("cartIcon");
-
     const stockDisplay = document.getElementById("quickViewStock");
 
     const decreaseButton = document.getElementById("quickViewDecrease");
-
     const increaseButton = document.getElementById("quickViewIncrease");
 
     let selectedProduct = null;
-
     let openedFromHistory = false;
 
+    /* ==========================================
+       TIKTOK-STYLE ADD TO CART ANIMATION
+    ========================================== */
 
-    // ==========================================
-    // OPEN PRODUCT QUICK VIEW
-    // ==========================================
+    function animateAddToCart() {
+
+        const productImage = document.getElementById("quickViewImage");
+
+        if (!productImage || !cartIcon) {
+            return;
+        }
+
+        const imageRect = productImage.getBoundingClientRect();
+        const cartRect = cartIcon.getBoundingClientRect();
+
+        // Create flying product image
+
+        const flyingImage = document.createElement("img");
+
+        flyingImage.src = productImage.src;
+        flyingImage.className = "flying-cart-image";
+
+        flyingImage.style.left = imageRect.left + "px";
+        flyingImage.style.top = imageRect.top + "px";
+
+        document.body.appendChild(flyingImage);
+
+        // Calculate destination
+
+        const startX = imageRect.left;
+        const startY = imageRect.top;
+
+        const endX = cartRect.left + cartRect.width / 2 - 42.5;
+        const endY = cartRect.top + cartRect.height / 2 - 42.5;
+
+        const moveX = endX - startX;
+        const moveY = endY - startY;
+
+        // Animate image toward cart
+
+        const animation = flyingImage.animate(
+            [
+                {
+                    transform: "translate(0, 0) scale(1)",
+                    opacity: 1
+                },
+                {
+                    transform: `translate(${moveX * 0.5}px, ${moveY * 0.5 - 80}px) scale(0.7)`,
+                    opacity: 0.9
+                },
+                {
+                    transform: `translate(${moveX}px, ${moveY}px) scale(0.12)`,
+                    opacity: 0
+                }
+            ],
+            {
+                duration: 750,
+                easing: "cubic-bezier(0.45, 0, 0.55, 1)",
+                fill: "forwards"
+            }
+        );
+
+        // Remove flying image and bounce cart icon
+
+        animation.onfinish = () => {
+
+            flyingImage.remove();
+
+            cartIcon.animate(
+                [
+                    { transform: "scale(1)" },
+                    { transform: "scale(1.3)" },
+                    { transform: "scale(0.9)" },
+                    { transform: "scale(1.1)" },
+                    { transform: "scale(1)" }
+                ],
+                {
+                    duration: 450,
+                    easing: "ease-out"
+                }
+            );
+
+        };
+
+        // Remove previous toast if present
+
+        const oldToast = document.querySelector(".cart-success-toast");
+
+        if (oldToast) {
+            oldToast.remove();
+        }
+
+        // Create centered success notification
+
+        const toast = document.createElement("div");
+
+        toast.className = "cart-success-toast";
+
+        toast.innerHTML = `
+            <i class="fa-solid fa-circle-check"></i>
+            <span>Added to your cart!</span>
+        `;
+
+        document.body.appendChild(toast);
+
+        // Automatically hide notification
+
+        setTimeout(() => {
+
+            toast.classList.add("hide");
+
+            toast.addEventListener(
+                "animationend",
+                () => toast.remove(),
+                { once: true }
+            );
+
+        }, 2200);
+
+    }
+
+
+    /* ==========================================
+       OPEN PRODUCT QUICK VIEW
+    ========================================== */
 
     document.querySelectorAll(".product-modal-trigger").forEach(card => {
 
@@ -372,7 +542,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 stock: Math.max(0, Number(card.dataset.productStock) || 0),
                 image: card.dataset.productImage
             };
-
 
             // PRODUCT DETAILS
 
@@ -391,19 +560,14 @@ document.addEventListener("DOMContentLoaded", () => {
                     maximumFractionDigits: 2
                 });
 
-
             // PRODUCT IMAGE
 
             const image = document.getElementById("quickViewImage");
 
             image.src = selectedProduct.image;
-
             image.alt = selectedProduct.name;
 
-
-            // ==========================================
-            // DISPLAY AVAILABLE STOCK
-            // ==========================================
+            // AVAILABLE STOCK
 
             if (selectedProduct.stock <= 0) {
 
@@ -422,41 +586,27 @@ document.addEventListener("DOMContentLoaded", () => {
 
             }
 
-
-            // ==========================================
             // RESET QUANTITY
-            // ==========================================
 
             quantity.value = "1";
-
             quantity.min = "1";
-
             quantity.max = String(selectedProduct.stock);
 
             quantity.disabled = selectedProduct.stock <= 0;
 
             decreaseButton.disabled = selectedProduct.stock <= 0;
-
             increaseButton.disabled = selectedProduct.stock <= 0;
 
-
-            // ==========================================
             // RESET MESSAGE
-            // ==========================================
 
             message.textContent = "";
-
             message.className = "";
 
-
-            // ==========================================
             // ADD TO CART BUTTON
-            // ==========================================
 
             if (selectedProduct.stock <= 0) {
 
                 addButton.disabled = true;
-
                 addButton.innerHTML = "Out of stock";
 
             } else {
@@ -468,10 +618,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             }
 
-
-            // ==========================================
             // URL HISTORY
-            // ==========================================
 
             const url = new URL(window.location.href);
 
@@ -488,9 +635,9 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
 
-    // ==========================================
-    // DECREASE QUANTITY
-    // ==========================================
+    /* ==========================================
+       DECREASE QUANTITY
+    ========================================== */
 
     decreaseButton.addEventListener("click", () => {
 
@@ -503,9 +650,9 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
 
-    // ==========================================
-    // INCREASE QUANTITY
-    // ==========================================
+    /* ==========================================
+       INCREASE QUANTITY
+    ========================================== */
 
     increaseButton.addEventListener("click", () => {
 
@@ -514,17 +661,15 @@ document.addEventListener("DOMContentLoaded", () => {
         const current = parseInt(quantity.value, 10) || 1;
 
         if (current < selectedProduct.stock) {
-
             quantity.value = current + 1;
-
         }
 
     });
 
 
-    // ==========================================
-    // VALIDATE MANUAL QUANTITY INPUT
-    // ==========================================
+    /* ==========================================
+       VALIDATE MANUAL QUANTITY INPUT
+    ========================================== */
 
     quantity.addEventListener("input", () => {
 
@@ -535,23 +680,19 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!Number.isFinite(amount)) return;
 
         if (amount > selectedProduct.stock) {
-
             quantity.value = selectedProduct.stock;
-
         }
 
         if (amount < 1) {
-
             quantity.value = 1;
-
         }
 
     });
 
 
-    // ==========================================
-    // CLOSE MODAL
-    // ==========================================
+    /* ==========================================
+       CLOSE MODAL
+    ========================================== */
 
     modalElement.addEventListener("hidden.bs.modal", () => {
 
@@ -570,9 +711,9 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
 
-    // ==========================================
-    // BROWSER BACK BUTTON
-    // ==========================================
+    /* ==========================================
+       BROWSER BACK BUTTON
+    ========================================== */
 
     window.addEventListener("popstate", () => {
 
@@ -587,9 +728,9 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
 
-    // ==========================================
-    // VISIBLE BACK BUTTON
-    // ==========================================
+    /* ==========================================
+       VISIBLE BACK BUTTON
+    ========================================== */
 
     document.getElementById("quickViewBack")?.addEventListener("click", () => {
 
@@ -609,43 +750,37 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
 
-    // ==========================================
-    // ADD TO CART
-    // ==========================================
+    /* ==========================================
+       ADD TO CART
+    ========================================== */
 
     addButton.addEventListener("click", async () => {
 
         if (!selectedProduct) return;
 
-
         const amount = Number(quantity.value);
-
 
         // VALIDATE QUANTITY
 
         if (!Number.isSafeInteger(amount) || amount < 1) {
 
             message.textContent = "Please choose a valid quantity.";
-
             message.className = "quick-view-error";
 
             return;
 
         }
-
 
         // VALIDATE STOCK
 
         if (selectedProduct.stock <= 0) {
 
             message.textContent = "This product is currently out of stock.";
-
             message.className = "quick-view-error";
 
             return;
 
         }
-
 
         if (amount > selectedProduct.stock) {
 
@@ -658,7 +793,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
         }
 
-
         // DISABLE BUTTON WHILE ADDING
 
         addButton.disabled = true;
@@ -667,7 +801,6 @@ document.addEventListener("DOMContentLoaded", () => {
             '<i class="fa-solid fa-spinner fa-spin"></i> Adding...';
 
         message.textContent = "";
-
 
         try {
 
@@ -689,9 +822,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             });
 
-
             const data = await response.json();
-
 
             // LOGIN CHECK
 
@@ -704,6 +835,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             }
 
+            // CHECK API RESPONSE
 
             if (!response.ok || !data.success) {
 
@@ -713,14 +845,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
             }
 
+            // CLEAR SUCCESS MESSAGE FROM PRODUCT MODAL
 
-            // SUCCESS MESSAGE
+            message.textContent = "";
+            message.className = "";
 
-            message.textContent =
-                data.message || "Added to your cart.";
+            // RUN CENTERED TIKTOK-STYLE ANIMATION
 
-            message.className = "quick-view-success";
-
+            animateAddToCart();
 
             // UPDATE CART BADGE
 
@@ -739,17 +871,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
             }
 
-
             // UPDATE BUTTON
 
             addButton.innerHTML =
                 '<i class="fa-solid fa-check"></i> Added';
 
+            // Allow another add after a short delay
+
+            setTimeout(() => {
+
+                addButton.disabled = false;
+
+                addButton.innerHTML =
+                    '<i class="fa-solid fa-cart-plus"></i> Add to cart';
+
+            }, 1500);
 
         } catch (error) {
 
             message.textContent = error.message;
-
             message.className = "quick-view-error";
 
             addButton.disabled = false;
