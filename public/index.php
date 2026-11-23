@@ -135,7 +135,7 @@ function sweetProductImage($imageName)
                 </h6>
             </div>
 
-            <a href="/SoftEcoms/public/order.php" class="view-all-link">
+            <a href="/SoftEcoms/public/productpage.php" class="view-all-link">
                 View All <span>&gt;</span>
             </a>
 
